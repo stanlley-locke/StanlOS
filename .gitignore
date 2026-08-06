@@ -1,0 +1,31 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Logs and Temp
+logs/
+*.log
+storage/temp/
+storage/downloads/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo

@@ -1,0 +1,30 @@
+# Web and API
+fastapi
+uvicorn[standard]
+aiohttp
+httpx
+
+# Telegram Bot & MTProto
+aiogram
+pyrogram
+tgcrypto
+
+# Configuration & Validation
+python-dotenv==1.0.1
+
+# Database
+sqlitecloud
+
+# AI and Data
+tenacity==8.3.0
+numpy==1.26.4
+pypdf==4.2.0
+
+# Media
+yt-dlp==2024.5.27
+
+# Utilities
+beautifulsoup4==4.12.3
+python-dateutil
+psutil
+colorama
