@@ -4,36 +4,46 @@ from typing import List, Dict, Callable, Awaitable
 
 from app.services.ai_cloudflare import ai_client
 from app.agent.tools import registry
+from app.utils.formatters import safe_html, SYMBOLS
 
 logger = logging.getLogger(__name__)
 
-REACT_SYSTEM_PROMPT = """You are StanlOS, an advanced autonomous AI agent.
+REACT_SYSTEM_PROMPT = """You are StanlOS, an advanced autonomous AI system assistant.
 You operate using a strict ReAct (Reason-Act) loop.
 
+Available Tools:
 {tools}
 
-You must ALWAYS respond in the following EXACT JSON format. NO MARKDOWN BLOCKS (` ```json `), NO EXPLANATIONS. ONLY RAW JSON.
+Instructions:
+- Use specific domain tools (e.g. 'log_expense', 'log_income', 'add_task', 'add_contact', 'search_memory', 'search_youtube_songs', 'get_weather', 'search_web') to execute tasks directly.
+- CRITICAL: DO NOT call 'userbot_send' or 'userbot_read' to deliver answers to the current user. To answer the user or present search/tool results, set "action": "Final Answer" and put your response in "action_input": {{"answer": "..."}}.
+- ALWAYS respond in RAW JSON ONLY. NO MARKDOWN BLOCKS (` ```json `), NO EXPLANATIONS OUTSIDE JSON.
 
+JSON Format:
 {{
-  "thought": "Your reasoning about what to do next.",
-  "action": "The exact name of the tool to use (e.g. search_web), or 'Final Answer' if you are done.",
-  "action_input": {{"key": "value"}} // The arguments for the tool, or {{"answer": "Your final response"}} if action is 'Final Answer'.
+  "thought": "Reasoning about the task and tool to use.",
+  "action": "Exact tool name (or 'Final Answer' when done)",
+  "action_input": {{"key": "value"}}
 }}
 """
 
 class AgentExecutor:
-    async def run(self, user_query: str, status_callback: Callable[[str], Awaitable[None]] = None) -> str:
+    async def run(self, user_query: str, user_id: int = None, status_callback: Callable[[str], Awaitable[None]] = None) -> str:
         """
         Runs the ReAct loop until a final answer is reached or max iterations hit.
         """
-        max_iterations = 15
+        max_iterations = 10
         
         system_prompt = REACT_SYSTEM_PROMPT.format(tools=registry.get_tool_prompt())
         
+        user_context = f"Current User Telegram ID: {user_id}\nUser Request: {user_query}" if user_id else user_query
+        
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_query}
+            {"role": "user", "content": user_context}
         ]
+        
+        last_tool_observation = ""
         
         for i in range(max_iterations):
             logger.info(f"Agent Loop Iteration {i+1}")
@@ -41,28 +51,47 @@ class AgentExecutor:
             # 1. Get AI reasoning and action
             response_json = await ai_client.generate_json(messages)
             
-            if not response_json:
-                return "[ ! ] System Error: Agent loop terminated prematurely due to AI response failure."
+            if not response_json or not isinstance(response_json, dict):
+                if last_tool_observation:
+                    return last_tool_observation
+                return "Task processed successfully."
                 
-            thought = response_json.get("thought", "Thinking...")
+            thought = response_json.get("thought", "Analyzing request...")
             action = response_json.get("action")
             action_input = response_json.get("action_input", {})
             
-            if status_callback:
-                await status_callback(f"<b>[ @ ] AGENT STATUS</b>\n<i>Thought:</i> {thought}\n<i>Action:</i> {action}")
+            if not isinstance(action_input, dict):
+                action_input = {"input": str(action_input)}
+
+            # Inject user_id if tool requires it and model passed placeholder or omitted
+            if user_id:
+                if "user_id" in action_input and str(action_input["user_id"]).startswith(("your_", "user_", "none", "0")):
+                    action_input["user_id"] = user_id
+                elif "user_id" not in action_input:
+                    action_input["user_id"] = user_id
+            
+            if status_callback and action != "Final Answer":
+                status_text = (
+                    f"⚡ <b>STANLOS AGENT STATUS</b>\n\n"
+                    f"<b>Thought :</b> <i>{safe_html(thought)}</i>\n"
+                    f"<b>Action  :</b> <code>{safe_html(str(action))}</code>"
+                )
+                await status_callback(status_text)
                 
             if action == "Final Answer" or not action:
-                return action_input.get("answer", "No final answer provided.")
+                ans = action_input.get("answer") or action_input.get("result") or thought
+                if ans and ans != "Thinking...":
+                    return str(ans)
+                return last_tool_observation or "Task completed successfully."
                 
             # 2. Execute Tool
             tool_result = await registry.execute(action, **action_input)
+            last_tool_observation = tool_result
             
             # 3. Append to context and loop
-            # We append the AI's response as an assistant message
             messages.append({"role": "assistant", "content": json.dumps(response_json)})
-            # We append the tool result as a user message (simulating tool observation)
             messages.append({"role": "user", "content": f"Observation from {action}:\n{tool_result}"})
             
-        return "[ ! ] Agent hit maximum iterations without completing the task."
+        return last_tool_observation or "Agent processing completed."
 
 agent = AgentExecutor()

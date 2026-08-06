@@ -61,7 +61,10 @@ class DatabaseManager:
             CREATE TABLE IF NOT EXISTS transactions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,
+                transaction_code TEXT,
                 amount REAL NOT NULL,
+                fee REAL DEFAULT 0.0,
+                balance REAL,
                 vendor TEXT,
                 category TEXT,
                 transaction_type TEXT DEFAULT 'expense', 
@@ -69,7 +72,8 @@ class DatabaseManager:
                 transaction_date DATETIME,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(user_id) REFERENCES users(tg_id)
-            )
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_txn_code ON transactions(user_id, transaction_code) WHERE transaction_code IS NOT NULL;
             """,
             # CRM / Network Intelligence
             """
@@ -121,6 +125,17 @@ class DatabaseManager:
                 metadata_json, 
                 content='documents', 
                 content_rowid='id'
+            )
+            """,
+            # Long-term Memory & Personal Facts
+            """
+            CREATE TABLE IF NOT EXISTS memories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                fact_key TEXT NOT NULL,
+                fact_value TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(tg_id)
             )
             """
             # Omitting triggers for brevity, can add later if needed for real-time FTS sync

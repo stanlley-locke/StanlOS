@@ -67,13 +67,10 @@ class CloudflareAI:
         try:
             import json, re
             
-            # Find the first { and last }
             start = raw_resp.find('{')
-            end = raw_resp.rfind('}')
-            
-            if start != -1 and end != -1 and end > start:
-                json_str = raw_resp[start:end+1]
-                return json.loads(json_str)
+            if start != -1:
+                obj, _ = json.JSONDecoder().raw_decode(raw_resp[start:])
+                return obj
             else:
                 logger.error(f"Failed to find JSON bounds in AI response. Raw: {raw_resp}")
                 return None

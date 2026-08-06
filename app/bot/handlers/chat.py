@@ -4,7 +4,7 @@ import logging
 import asyncio
 
 from app.agent.executor import agent
-from app.utils.formatters import SYMBOLS
+from app.utils.formatters import SYMBOLS, safe_html
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -25,7 +25,7 @@ async def handle_text_message(message: Message):
     """
     user_text = message.text
     
-    status_msg = await message.answer(f"<b>[ @ ] AGENT STATUS</b>\n<i>Thought:</i> Initializing core systems...")
+    status_msg = await message.answer(f"⚡ <b>STANLOS AGENT STATUS</b>\n\n<b>Thought :</b> <i>Initializing request context...</i>")
     
     async def status_callback(status: str):
         try:
@@ -34,15 +34,15 @@ async def handle_text_message(message: Message):
         except Exception as e:
             pass
             
-    final_response = await agent.run(user_text, status_callback=status_callback)
+    final_response = await agent.run(user_text, user_id=message.from_user.id, status_callback=status_callback)
     
-    await status_msg.delete()
+    try:
+        await status_msg.delete()
+    except Exception:
+        pass
     
     if final_response:
-        await message.reply(
-            f"<b>AGENT RESPONSE</b>\n"
-            f"\n"
-            f"{final_response}"
-        )
+        clean_response = safe_html(final_response)
+        await message.reply(f"🤖 <b>AGENT RESPONSE</b>\n\n{clean_response}")
     else:
         await message.reply(f"{SYMBOLS['alert']} System Error: AI backend offline or unresponsive.")
