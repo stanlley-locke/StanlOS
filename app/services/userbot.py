@@ -19,9 +19,9 @@ class UserbotService:
 
         try:
             loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-        except Exception:
-            pass
 
         if settings.PYROGRAM_SESSION_STRING:
             self.app = Client(
@@ -29,7 +29,8 @@ class UserbotService:
                 api_id=settings.API_ID,
                 api_hash=settings.API_HASH,
                 session_string=settings.PYROGRAM_SESSION_STRING,
-                no_updates=True
+                no_updates=True,
+                loop=loop
             )
         else:
             self.app = Client(
@@ -37,7 +38,8 @@ class UserbotService:
                 api_id=settings.API_ID,
                 api_hash=settings.API_HASH,
                 phone_number=settings.PHONE_NUMBER,
-                no_updates=True
+                no_updates=True,
+                loop=loop
             )
         
         try:
