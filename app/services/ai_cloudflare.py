@@ -65,19 +65,19 @@ class CloudflareAI:
             return raw_resp
             
         try:
-            import json, re
+            import json
             
             start = raw_resp.find('{')
             if start != -1:
                 obj, _ = json.JSONDecoder().raw_decode(raw_resp[start:])
                 return obj
             else:
-                logger.error(f"Failed to find JSON bounds in AI response. Raw: {raw_resp}")
-                return None
+                logger.info(f"AI response is plain text. Treating as Final Answer. Raw: {raw_resp}")
+                return {"thought": "Generated response", "action": "Final Answer", "action_input": {"answer": raw_resp}}
                 
         except Exception as e:
-            logger.error(f"Failed to parse JSON from AI: {e} | Raw: {raw_resp}")
-            return None
+            logger.info(f"JSON parsing fallback triggered. Returning raw text as answer. Raw: {raw_resp}")
+            return {"thought": "Generated response", "action": "Final Answer", "action_input": {"answer": raw_resp}}
 
     async def generate_embeddings(self, text: str, model: str = None) -> Optional[List[float]]:
         """

@@ -61,7 +61,7 @@ class AgentExecutor:
             action_input = response_json.get("action_input", {})
             
             if not isinstance(action_input, dict):
-                action_input = {"input": str(action_input)}
+                action_input = {"answer": str(action_input)}
 
             # Inject user_id if tool requires it and model passed placeholder or omitted
             if user_id:
@@ -70,7 +70,7 @@ class AgentExecutor:
                 elif "user_id" not in action_input:
                     action_input["user_id"] = user_id
             
-            if status_callback and action != "Final Answer":
+            if status_callback and action and action != "Final Answer":
                 status_text = (
                     f"⚡ <b>STANLOS AGENT STATUS</b>\n\n"
                     f"<b>Thought :</b> <i>{safe_html(thought)}</i>\n"
@@ -78,15 +78,17 @@ class AgentExecutor:
                 )
                 await status_callback(status_text)
                 
-            if action == "Final Answer" or not action:
-                ans = action_input.get("answer") or action_input.get("result") or thought
-                if ans and ans != "Thinking...":
+            if action == "Final Answer" or not action or str(action).lower() in ["none", "null", "done", "finish"]:
+                ans = action_input.get("answer") or action_input.get("result") or action_input.get("input") or thought
+                if ans and str(ans).strip() not in ["Thinking...", "Analyzing request...", "Generated response"]:
                     return str(ans)
-                return last_tool_observation or "Task completed successfully."
+                if last_tool_observation:
+                    return last_tool_observation
+                return str(ans) if ans else "Task completed successfully."
                 
             # 2. Execute Tool
             tool_result = await registry.execute(action, **action_input)
-            last_tool_observation = tool_result
+            last_tool_observation = str(tool_result) if tool_result is not None else ""
             
             # 3. Append to context and loop
             messages.append({"role": "assistant", "content": json.dumps(response_json)})
