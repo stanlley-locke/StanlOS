@@ -66,41 +66,55 @@ def format_card(header: str, fields: dict, footer: str = None) -> str:
     return "\n".join(lines)
 
 def format_dashboard(data: dict) -> str:
-    """Creates a sleek, minimalist dashboard briefing text."""
-    now = datetime.now().strftime("%a, %b %d %Y | %H:%M")
+    """Creates a rich, professional financial executive dashboard text."""
+    now = datetime.now().strftime("%a, %b %d, %Y | %H:%M")
     
-    finance_status = data.get("finance", "No transactions logged")
-    academic_status = data.get("academic", "All tasks up to date")
+    total_income = data.get("total_income", 0.0)
+    total_expense = data.get("total_expense", 0.0)
+    net_balance = total_income - total_expense
+    
+    pending_tasks_count = data.get("pending_tasks_count", 0)
     knowledge_count = data.get("knowledge_count", 0)
     contacts_count = data.get("contacts_count", 0)
-    pending_tasks_count = data.get("pending_tasks_count", 0)
+    top_category = data.get("top_category", "None")
+    top_cat_amount = data.get("top_cat_amount", 0.0)
 
     text = (
-        f"<b>StanlOS</b>\n"
+        f"<b>StanlOS Executive Console</b>\n"
         f"<i>{now}</i>\n\n"
-        f"• <b>Tasks:</b> {academic_status} ({pending_tasks_count} pending)\n"
-        f"• <b>Finance:</b> {finance_status}\n"
-        f"• <b>Memory:</b> {knowledge_count} documents indexed\n"
-        f"• <b>Network:</b> {contacts_count} contacts recorded"
+        f"<b>Financial Overview</b>\n"
+        f"├ Net Balance   : <b>Ksh {net_balance:,.2f}</b>\n"
+        f"├ Total Income  : <b>+Ksh {total_income:,.2f}</b>\n"
+        f"└ Total Expense : <b>-Ksh {total_expense:,.2f}</b>\n\n"
+        f"<b>Spending Summary</b>\n"
+        f"└ Top Category  : <b>{top_category.upper()}</b> (Ksh {top_cat_amount:,.2f})\n\n"
+        f"<b>System Workload & Intelligence</b>\n"
+        f"├ Pending Tasks : <b>{pending_tasks_count}</b> items\n"
+        f"├ RAG Documents : <b>{knowledge_count}</b> indexed\n"
+        f"└ CRM Contacts  : <b>{contacts_count}</b> recorded"
     )
     return text
 
 def build_main_menu_kb(is_admin: bool = True) -> InlineKeyboardMarkup:
     rows = [
         [
-            InlineKeyboardButton(text="Tasks & Academic", callback_data="menu:academic"),
-            InlineKeyboardButton(text="Finance & MPESA", callback_data="menu:finance")
+            InlineKeyboardButton(text="Finance & Accounting", callback_data="menu:finance"),
+            InlineKeyboardButton(text="Expense Breakdown", callback_data="fin:summary")
         ],
         [
-            InlineKeyboardButton(text="Knowledge & RAG", callback_data="menu:knowledge"),
-            InlineKeyboardButton(text="Network CRM", callback_data="menu:crm")
+            InlineKeyboardButton(text="Log Expense", callback_data="fin:action_expense"),
+            InlineKeyboardButton(text="Log Income", callback_data="fin:action_income")
         ],
         [
-            InlineKeyboardButton(text="Media Extractor", callback_data="menu:media"),
+            InlineKeyboardButton(text="Tasks & Workload", callback_data="menu:academic"),
+            InlineKeyboardButton(text="Knowledge RAG", callback_data="menu:knowledge")
+        ],
+        [
+            InlineKeyboardButton(text="Network CRM", callback_data="menu:crm"),
             InlineKeyboardButton(text="Tools & Utilities", callback_data="menu:tools")
         ],
         [
-            InlineKeyboardButton(text="Gamification", callback_data="menu:gamification"),
+            InlineKeyboardButton(text="Media Extractor", callback_data="menu:media"),
             InlineKeyboardButton(text="AI Agent Terminal", callback_data="menu:ai_chat")
         ]
     ]
@@ -124,5 +138,5 @@ def build_sub_menu_kb(buttons: list = None) -> InlineKeyboardMarkup:
             elif isinstance(btn, tuple):
                 text, cb = btn
                 rows.append([InlineKeyboardButton(text=text, callback_data=cb)])
-    rows.append([InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")])
+    rows.append([InlineKeyboardButton(text="« Back to Main Dashboard", callback_data="menu:main")])
     return InlineKeyboardMarkup(inline_keyboard=rows)

@@ -14,49 +14,37 @@ logger = logging.getLogger(__name__)
 async def get_dashboard_data(user_id: int) -> dict:
     data = {}
     
-    # Get academic stats
-    pending_tasks = await db.execute(
-        "SELECT title, due_date FROM tasks WHERE user_id = ? AND status = 'pending' ORDER BY due_date ASC LIMIT 1",
+    # Financial Stats
+    inc_res = await db.execute("SELECT SUM(amount) FROM transactions WHERE user_id = ? AND transaction_type = 'income'", (user_id,), fetch=True)
+    exp_res = await db.execute("SELECT SUM(amount) FROM transactions WHERE user_id = ? AND transaction_type = 'expense'", (user_id,), fetch=True)
+    
+    data["total_income"] = inc_res[0][0] or 0.0 if inc_res else 0.0
+    data["total_expense"] = exp_res[0][0] or 0.0 if exp_res else 0.0
+    
+    top_cat_row = await db.execute(
+        "SELECT category, SUM(amount) FROM transactions WHERE user_id = ? AND transaction_type = 'expense' GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
         (user_id,), fetch=True
     )
-    if pending_tasks:
-        data["academic"] = f"Next: {pending_tasks[0][0]} (Due: {pending_tasks[0][1]})"
-    
-    # Get pending tasks count
+    if top_cat_row and top_cat_row[0][0]:
+        data["top_category"] = top_cat_row[0][0]
+        data["top_cat_amount"] = top_cat_row[0][1] or 0.0
+    else:
+        data["top_category"] = "None"
+        data["top_cat_amount"] = 0.0
+        
+    # Pending tasks count
     pending_count = await db.execute(
         "SELECT COUNT(*) FROM tasks WHERE user_id = ? AND status = 'pending'",
         (user_id,), fetch=True
     )
     data["pending_tasks_count"] = pending_count[0][0] if pending_count else 0
     
-    # Get finance stats
-    fin = await db.execute(
-        "SELECT SUM(amount) FROM transactions WHERE user_id = ? AND transaction_type = 'expense'",
-        (user_id,), fetch=True
-    )
-    if fin and fin[0][0]:
-        data["finance"] = f"Total Expense: Ksh {fin[0][0]:,.2f}"
-        
-    # Get KB stats
-    kb_count = await db.execute(
-        "SELECT COUNT(*) FROM documents WHERE user_id = ?",
-        (user_id,), fetch=True
-    )
+    # KB & CRM stats
+    kb_count = await db.execute("SELECT COUNT(*) FROM documents WHERE user_id = ?", (user_id,), fetch=True)
     data["knowledge_count"] = kb_count[0][0] if kb_count else 0
     
-    # Get CRM stats
-    contacts_count = await db.execute(
-        "SELECT COUNT(*) FROM contacts WHERE user_id = ?",
-        (user_id,), fetch=True
-    )
+    contacts_count = await db.execute("SELECT COUNT(*) FROM contacts WHERE user_id = ?", (user_id,), fetch=True)
     data["contacts_count"] = contacts_count[0][0] if contacts_count else 0
-    
-    # Get user gamification points
-    user_info = await db.execute(
-        "SELECT points FROM users WHERE tg_id = ?",
-        (user_id,), fetch=True
-    )
-    data["points"] = user_info[0][0] if user_info and user_info[0][0] is not None else 0
         
     return data
 
