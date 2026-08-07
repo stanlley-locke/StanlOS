@@ -29,7 +29,7 @@ async def cb_gamification_menu(event: Message | CallbackQuery):
     
     text = (
         f"<b>Gamification & Interactive Arcade</b>\n\n"
-        f"<b>Your Balance:</b> <code>{points} PTS</code> 🏆\n\n"
+        f"<b>Your Balance:</b> <code>{points} PTS</code>\n\n"
         f"Earn points by completing daily check-ins, solving math speed games, and answering AI trivia quizzes!\n\n"
         f"• /checkin - Claim daily bonus (+10 PTS)\n"
         f"• /math_game - Speed Math Challenge (+50 PTS)\n"
@@ -94,7 +94,7 @@ async def cb_math_answer(cb: CallbackQuery):
     if is_correct == "1":
         await increment_points(user_id, 50)
         await cb.answer("Correct! +50 PTS awarded!")
-        text = f"<b>Correct Answer!</b>\n\n<b>Reward:</b> +50 PTS 🏆\n{ans} was indeed the correct calculation!"
+        text = f"<b>Correct Answer!</b>\n\n<b>Reward:</b> +50 PTS\n{ans} was indeed the correct calculation!"
     else:
         await cb.answer("Incorrect answer!")
         text = f"<b>Incorrect!</b>\n\nThe correct answer was: <code>{ans}</code>"
@@ -195,7 +195,7 @@ async def process_quiz(message: Message, state: FSMContext):
         )
     else:
         await message.answer(
-            f"<b>❌ INCORRECT</b>\n\n"
+            f"<b>INCORRECT</b>\n\n"
             f"The correct answer was: <code>{safe_html(data.get('answer', 'N/A'))}</code>",
             reply_markup=kb
         )
@@ -207,7 +207,7 @@ async def cmd_leaderboard(event: Message | CallbackQuery):
     query = "SELECT full_name, username, points FROM users ORDER BY points DESC LIMIT 5"
     top_users = await db.execute(query, fetch=True)
     
-    text = f"<b>🏆 STANLOS GAMIFICATION LEADERBOARD</b>\n\n"
+    text = f"<b>STANLOS GAMIFICATION LEADERBOARD</b>\n\n"
     
     if not top_users:
         text += "No high scores registered yet."

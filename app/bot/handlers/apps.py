@@ -20,8 +20,7 @@ def get_categories():
 async def cb_apps_menu(cb: CallbackQuery, state: FSMContext):
     await state.clear()
     text = (
-        f"<b>🔌 UNIVERSAL APP STORE</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"<b>UNIVERSAL APP STORE</b>\n\n"
         f"StanlOS supports native integration with {len(APPS_METADATA)} enterprise applications. "
         f"Select a category below to browse apps or use the Search button.\n"
     )
@@ -31,14 +30,14 @@ async def cb_apps_menu(cb: CallbackQuery, state: FSMContext):
     
     row = []
     for cat in categories:
-        row.append(InlineKeyboardButton(text=f"📁 {cat}", callback_data=f"appcat:{cat}"))
+        row.append(InlineKeyboardButton(text=f"{cat}", callback_data=f"appcat:{cat}"))
         if len(row) == 2:
             buttons.append(row)
             row = []
     if row:
         buttons.append(row)
         
-    buttons.append([InlineKeyboardButton(text="🔍 Search App Directory", callback_data="appsearch:init")])
+    buttons.append([InlineKeyboardButton(text="Search App Directory", callback_data="appsearch:init")])
     buttons.append([InlineKeyboardButton(text="« Back to Dashboard", callback_data="menu:main")])
     
     kb = InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -50,7 +49,7 @@ async def cb_app_category(cb: CallbackQuery):
     
     apps_in_cat = [a for a in APPS_METADATA if a["category"] == cat_name]
     
-    text = f"<b>📁 CATEGORY: {cat_name.upper()}</b>\n\nSelect an app to configure:"
+    text = f"<b>CATEGORY: {cat_name.upper()}</b>\n\nSelect an app to configure:"
     
     buttons = []
     row = []
@@ -71,7 +70,7 @@ async def cb_app_category(cb: CallbackQuery):
 async def cb_appsearch_init(cb: CallbackQuery, state: FSMContext):
     await state.set_state(AppStoreState.waiting_for_search)
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Cancel", callback_data="menu:apps")]])
-    await cb.message.edit_text("<b>🔍 SEARCH APP DIRECTORY</b>\n\nPlease type the name of the app you are looking for (e.g. 'Gmail' or 'GitHub').", reply_markup=kb)
+    await cb.message.edit_text("<b>SEARCH APP DIRECTORY</b>\n\nPlease type the name of the app you are looking for (e.g. 'Gmail' or 'GitHub').", reply_markup=kb)
 
 @router.message(AppStoreState.waiting_for_search)
 async def process_app_search(message: Message, state: FSMContext):
@@ -84,7 +83,7 @@ async def process_app_search(message: Message, state: FSMContext):
         kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to App Store", callback_data="menu:apps")]])
         return await message.answer(f"No apps found matching '<b>{message.text}</b>'.", reply_markup=kb)
         
-    text = f"<b>🔍 SEARCH RESULTS FOR '{message.text}'</b>\n\nFound {len(results)} matches:"
+    text = f"<b>SEARCH RESULTS FOR '{message.text}'</b>\n\nFound {len(results)} matches:"
     buttons = []
     row = []
     for app in results:
@@ -112,12 +111,11 @@ async def cb_app_detail(cb: CallbackQuery, state: FSMContext):
     rows = await db.execute("SELECT status FROM user_apps WHERE user_id = ? AND app_id = ?", (user_id, app_id), fetch=True)
     is_connected = bool(rows and rows[0][0] == 'active')
     
-    status_str = "✅ CONNECTED" if is_connected else "❌ NOT CONNECTED"
+    status_str = "CONNECTED" if is_connected else "NOT CONNECTED"
     
     text = (
         f"<b>{app_data['name'].upper()}</b>\n"
-        f"<i>{app_data['desc']}</i>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"<i>{app_data['desc']}</i>\n\n"
         f"<b>Status:</b> {status_str}\n"
         f"<b>Auth Method:</b> {app_data['auth']}\n\n"
     )

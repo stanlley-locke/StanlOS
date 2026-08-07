@@ -21,7 +21,7 @@ class ContactState(StatesGroup):
 async def cb_crm_menu(event: Message | CallbackQuery):
     text = (
         f"<b>{SYMBOLS['notes']} NETWORK INTELLIGENCE (CRM)</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        
         f"Manage your professional contacts, relationship context, and notes:\n\n"
         f"{SYMBOLS['bullet']} /contact &lt;details&gt; - Add contact (AI parsed)\n"
         f"{SYMBOLS['bullet']} /network - Browse saved contacts database"
@@ -143,7 +143,7 @@ async def cmd_network(event: Message | CallbackQuery):
         if company:
             text += f" (<i>{safe_html(company)}</i>)"
         if email:
-            text += f"\n   └ 📧 {safe_html(email)}"
+            text += f"\n   └ {safe_html(email)}"
         if context:
             text += f"\n   └ 📝 <i>\"{safe_html(context[:100])}\"</i>"
         text += "\n\n"

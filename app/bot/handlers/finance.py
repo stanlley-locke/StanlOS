@@ -250,7 +250,7 @@ async def cmd_summary(event: Message | CallbackQuery):
     cat_results = await db.execute(cat_query, (user_id,), fetch=True)
     
     text = (
-        f"<b>📊 FINANCIAL SUMMARY REPORT</b>\n\n"
+        f"<b>FINANCIAL SUMMARY REPORT</b>\n\n"
         f"<b>Total Income   :</b> +Ksh {total_income:,.2f}\n"
         f"<b>Total Expenses :</b> -Ksh {total_expense:,.2f}\n"
         f"<b>Net Cash Flow  :</b> Ksh {net_flow:,.2f}\n\n"
@@ -363,7 +363,7 @@ async def cb_delete_txn(cb: CallbackQuery):
 @router.message(Command("reset_transactions", "clear_finance"))
 async def cmd_reset_transactions(event: Message | CallbackQuery):
     text = (
-        f"<b>⚠️ RESET ALL TRANSACTIONS</b>\n\n"
+        f"<b>RESET ALL TRANSACTIONS</b>\n\n"
         f"Are you sure you want to permanently clear all financial transaction records? This action cannot be undone."
     )
     kb = InlineKeyboardMarkup(inline_keyboard=[

@@ -22,7 +22,7 @@ class NoteState(StatesGroup):
 async def cb_knowledge_menu(event: Message | CallbackQuery):
     text = (
         f"<b>{SYMBOLS['knowledge']} MEMORY & KNOWLEDGE BASE (RAG)</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        
         f"Store and retrieve knowledge using Cloudflare vector embeddings:\n\n"
         f"{SYMBOLS['bullet']} /note &lt;text&gt; - Save note into RAG memory\n"
         f"{SYMBOLS['bullet']} /find &lt;query&gt; - Perform semantic RAG search\n"
@@ -30,7 +30,7 @@ async def cb_knowledge_menu(event: Message | CallbackQuery):
         f"<i>Tip: Send any PDF document to automatically OCR and index it.</i>"
     )
     buttons = [
-        [("📝 Save Note", "kb:add_note"), ("🔍 Semantic Search", "kb:search")],
+        [("📝 Save Note", "kb:add_note"), ("Semantic Search", "kb:search")],
         [("📚 Browse Index", "kb:list")]
     ]
     kb = build_sub_menu_kb(buttons)
@@ -50,7 +50,7 @@ async def cb_add_note(cb: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "kb:search")
 async def cb_search(cb: CallbackQuery):
     await cb.message.edit_text(
-        f"<b>🔍 SEMANTIC RAG SEARCH</b>\n\n"
+        f"<b>SEMANTIC RAG SEARCH</b>\n\n"
         f"Use the command format: <code>/find your query here</code>\n"
         f"Example: <code>/find project deadlines for November</code>"
     )
@@ -138,7 +138,7 @@ async def cmd_find(message: Message):
         return await message.answer(f"No semantic matches found for: <code>{safe_html(query)}</code>", reply_markup=kb)
     
     text = (
-        f"<b>🔍 SEMANTIC SEARCH RESULTS</b>\n"
+        f"<b>SEMANTIC SEARCH RESULTS</b>\n"
         f"<b>Query:</b> <i>{safe_html(query)}</i>\n\n"
     )
     

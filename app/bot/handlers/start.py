@@ -194,7 +194,7 @@ async def cmd_memory(message: Message):
     from app.agent.tools import recall_fact
     facts = await recall_fact(user_id)
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
-    await message.answer(f"<b>🧠 STORED PERSONAL FACTS</b>\n\n{facts}", reply_markup=kb)
+    await message.answer(f"<b>STORED PERSONAL FACTS</b>\n\n{facts}", reply_markup=kb)
 
 @router.message(Command("convert"))
 async def cmd_convert(message: Message):

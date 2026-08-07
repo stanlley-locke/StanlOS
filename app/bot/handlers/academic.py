@@ -28,7 +28,7 @@ async def cmd_assign_start(event: Message | CallbackQuery, state: FSMContext):
     msg_target = event if isinstance(event, Message) else event.message
     await msg_target.answer(
         f"<b>➕ ADD NEW TASK / ASSIGNMENT</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        
         f"Please enter the title or description of the task:"
     )
     await state.set_state(AssignState.title)
@@ -125,7 +125,7 @@ async def cmd_assignments(event: Message | CallbackQuery):
         item_id, title, due_date = item
         text += f"{idx}. <b>{safe_html(title)}</b>\n   └ 🕒 Due: <code>{due_date}</code>\n\n"
         kb_rows.append([
-            InlineKeyboardButton(text=f"✅ Done #{idx}", callback_data=f"complete_task:{item_id}"),
+            InlineKeyboardButton(text=f"Done #{idx}", callback_data=f"complete_task:{item_id}"),
             InlineKeyboardButton(text=f"🗑️ Delete #{idx}", callback_data=f"delete_task:{item_id}")
         ])
     
@@ -166,7 +166,7 @@ async def cb_prioritize(cb: CallbackQuery):
     ])
     
     await cb.message.edit_text(
-        f"<b>🤖 AI PRODUCTIVITY PLAN</b>\n\n{clean_rec}",
+        f"<b>AI PRODUCTIVITY PLAN</b>\n\n{clean_rec}",
         reply_markup=kb
     )
 

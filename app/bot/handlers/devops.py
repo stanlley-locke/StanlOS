@@ -29,7 +29,7 @@ async def cmd_devops(event: Message | CallbackQuery):
         
     text = (
         f"<b>System Administration & DevOps</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        
         f"<b>Status:</b> [OK] ONLINE\n\n"
         f"• /stats - Resource utilization gauges\n"
         f"• /health - Subsystem connectivity test\n"
@@ -111,8 +111,8 @@ async def cmd_stats(event: Message | CallbackQuery):
     uptime = datetime.fromtimestamp(psutil.boot_time()).strftime('%Y-%m-%d %H:%M')
     
     text = (
-        f"<b>📊 SERVER PERFORMANCE METRICS</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"<b>SERVER PERFORMANCE METRICS</b>\n"
+        
         f"<b>CPU Usage:</b> {cpu_bar}\n"
         f"<b>RAM Usage:</b> {ram_bar}\n"
         f"  └ Used: {ram.used // (1024**2)}MB / {ram.total // (1024**2)}MB\n\n"
@@ -159,8 +159,8 @@ async def cmd_health(event: Message | CallbackQuery):
     userbot_status = f"{SYMBOLS['success']} Connected" if userbot_service.is_running else f"{SYMBOLS['alert']} Stopped"
 
     text = (
-        f"<b>🔍 DIAGNOSTIC REPORT</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"<b>DIAGNOSTIC REPORT</b>\n"
+        
         f"<b>SQLite Cloud DB :</b> {db_status}\n"
         f"<b>Cloudflare AI   :</b> {ai_status}\n"
         f"<b>Pyrogram Userbot :</b> {userbot_status}\n"
@@ -208,7 +208,7 @@ async def cmd_list_admins(message: Message):
     if not rows:
         return await message.answer("No administrators found.")
         
-    text = "<b>👑 SYSTEM ADMINISTRATORS</b>\n\n"
+    text = "<b>SYSTEM ADMINISTRATORS</b>\n\n"
     for r in rows:
         username_str = f" (@{r[2]})" if r[2] else ""
         text += f"• <code>{r[0]}</code> - {r[1]}{username_str}\n"
