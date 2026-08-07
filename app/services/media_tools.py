@@ -97,7 +97,7 @@ class MediaToolsService:
 
     async def search_soundcloud_songs(self, query: str, max_results: int = 5, limit: int = 5) -> list[dict]:
         """
-        Searches SoundCloud for music tracks/songs using scsearch:<query> to bypass YouTube bot blocks.
+        Searches  for music tracks/songs using scsearch:<query>.
         """
         count = max_results if max_results != 5 else limit
         ydl_opts = {
@@ -155,6 +155,33 @@ class MediaToolsService:
             return await asyncio.to_thread(_extract)
         except Exception as e:
             logger.error(f"Error extracting PDF text: {e}")
+            return ""
+
+    async def get_youtube_title_oembed(self, url: str) -> str:
+        """
+        Uses YouTube's public oEmbed API to fetch the title of a YouTube video safely.
+        """
+        import urllib.request, json
+        
+        # Clean URL to base format
+        yt_match = re.search(r'(?:youtu\.be/|youtube\.com/watch\?v=)([a-zA-Z0-9_-]{11})', url)
+        if yt_match:
+            clean_url = f"https://www.youtube.com/watch?v={yt_match.group(1)}"
+        else:
+            clean_url = url
+            
+        oembed_url = f"https://www.youtube.com/oembed?url={clean_url}&format=json"
+        
+        def _fetch():
+            req = urllib.request.Request(oembed_url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=10) as response:
+                data = json.loads(response.read().decode('utf-8'))
+                return data.get('title', '')
+                
+        try:
+            return await asyncio.to_thread(_fetch)
+        except Exception as e:
+            logger.error(f"Error fetching YouTube title via oEmbed: {e}")
             return ""
 
 media_tools = MediaToolsService()

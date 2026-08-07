@@ -113,14 +113,55 @@ async def cmd_yt_download(message: Message):
         except Exception:
             pass
     else:
-        if "Sign in to confirm" in str(title):
-            fail_text = f"{SYMBOLS['alert']} YouTube bot check triggered on this cloud IP. Supports TikTok, Instagram Reels, Twitter/X, SoundCloud, & direct MP3 URLs."
-        else:
-            fail_text = f"{SYMBOLS['alert']} Extraction failed: {safe_html(title)}"
+        # FALLBACK: If YouTube blocks the download, extract the title and search SoundCloud automatically!
+        if ("youtube.com" in query or "youtu.be" in query) and "Sign in to confirm" in str(title):
+            fb_msg = await message.answer(f"{SYMBOLS['alert']} YouTube blocked the download due to datacenter IP checks.\n\n{SYMBOLS['ai']} Fetching video title via oEmbed to search SoundCloud instead...")
+            yt_title = await media_tools.get_youtube_title_oembed(query)
+            
+            if yt_title:
+                import re
+                # Clean up title for better search results
+                clean_title = re.sub(r'\(.*?\)|\[.*?\]', '', yt_title).replace("Official Video", "").replace("Official Music Video", "").strip()
+                
+                await fb_msg.edit_text(f"{SYMBOLS['ai']} Searching SoundCloud for: <i>'{safe_html(clean_title)}'</i>...")
+                results = await media_tools.search_soundcloud_songs(clean_title, max_results=5)
+                
+                if results:
+                    text_lines = [
+                        f"🎵 <b>SOUNDCLOUD FALLBACK SEARCH</b>\n",
+                        f"Original: <i>{safe_html(yt_title)}</i>\n"
+                    ]
+                    kb_rows = []
+                    for idx, track in enumerate(results, 1):
+                        text_lines.append(f"{idx}. <b>{safe_html(track['title'])}</b> ({track['duration']})\n   👤 <i>{safe_html(track['uploader'])}</i>\n")
+                        btn_title = (track['title'][:24] + "..") if len(track['title']) > 24 else track['title']
+                        
+                        callback_str = f"scdl:{track['url']}"
+                        if len(callback_str.encode('utf-8')) > 64:
+                            callback_str = f"scdl:https://api.soundcloud.com/tracks/{track['id']}"
+                            
+                        kb_rows.append([InlineKeyboardButton(text=f"🎵 {idx}. {btn_title} ({track['duration']})", callback_data=callback_str[:64])])
+                        
+                    text_lines.append("<i>Select a song below to download MP3 audio:</i>")
+                    kb_rows.append([InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")])
+                    kb = InlineKeyboardMarkup(inline_keyboard=kb_rows)
+                    await fb_msg.delete()
+                    return await message.answer("\n".join(text_lines), reply_markup=kb)
+                
+            await fb_msg.edit_text(f"{SYMBOLS['alert']} Fallback failed. Could not find a SoundCloud alternative for this video.")
+            return
+
+        fail_text = f"{SYMBOLS['alert']} Extraction failed: {safe_html(title)}"
         await message.answer(fail_text)
 
 @router.callback_query(F.data.startswith("scdl:"))
 async def cb_scdl_download(cb: CallbackQuery):
+    # Answer the callback IMMEDIATELY so Telegram doesn't throw a "query is too old" timeout error
+    try:
+        await cb.answer("Download started! This may take up to a minute...", show_alert=False)
+    except Exception:
+        pass
+
     url = cb.data.split(":", 1)[1]
     
     await cb.message.edit_text(f"{SYMBOLS['ai']} Downloading and converting audio stream to MP3 from SoundCloud...")
@@ -150,7 +191,6 @@ async def cb_scdl_download(cb: CallbackQuery):
             pass
     else:
         await cb.message.edit_text(f"{SYMBOLS['alert']} Extraction failed. SoundCloud may be unavailable.")
-    await cb.answer()
 
 @router.message(F.document)
 async def handle_document(message: Message):
