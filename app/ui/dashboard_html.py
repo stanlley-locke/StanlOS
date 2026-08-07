@@ -52,12 +52,13 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
 
         .login-card {
             background: var(--bg-panel);
             border: 1px solid var(--border);
-            padding: 40px;
+            padding: 36px 32px;
             width: 100%;
             max-width: 400px;
         }
@@ -73,16 +74,6 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             color: var(--text-muted);
             font-size: 0.85rem;
             margin-bottom: 24px;
-        }
-
-        .credentials-notice {
-            background: #09090B;
-            border: 1px solid var(--border);
-            padding: 12px;
-            margin-bottom: 20px;
-            font-family: 'Fira Code', monospace;
-            font-size: 0.8rem;
-            color: var(--accent-blue);
         }
 
         .form-group {
@@ -107,6 +98,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             color: var(--text-white);
             font-size: 0.9rem;
             outline: none;
+            min-height: 44px;
             transition: border-color 0.15s ease;
         }
 
@@ -122,6 +114,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             color: #FFFFFF;
             font-weight: 600;
             font-size: 0.9rem;
+            min-height: 44px;
             cursor: pointer;
             transition: background 0.15s ease;
         }
@@ -134,10 +127,15 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             background: var(--bg-panel);
             border: 1px solid var(--border);
             color: var(--text-white);
-            padding: 8px 16px;
+            padding: 10px 16px;
             font-size: 0.85rem;
             font-weight: 500;
+            min-height: 44px;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .btn-secondary:hover {
@@ -158,11 +156,15 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             padding: 24px 0;
             display: flex;
             flex-direction: column;
+            transition: all 0.3s ease;
         }
 
         .brand-logo {
             padding: 0 24px;
             margin-bottom: 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .brand-title {
@@ -187,12 +189,13 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px 24px;
+            padding: 14px 24px;
             color: var(--text-muted);
             font-size: 0.88rem;
             font-weight: 500;
             cursor: pointer;
             border-left: 3px solid transparent;
+            min-height: 44px;
             transition: all 0.15s ease;
         }
 
@@ -221,6 +224,16 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             align-items: center;
             padding-bottom: 24px;
             margin-bottom: 28px;
+            border-bottom: 1px solid var(--border);
+            gap: 16px;
+        }
+
+        .mobile-header-bar {
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: var(--bg-panel);
             border-bottom: 1px solid var(--border);
         }
 
@@ -332,11 +345,13 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             border: 1px solid var(--border);
             padding: 20px;
             margin-bottom: 24px;
+            overflow-x: auto; /* Enable touch scrolling for tables on mobile */
         }
 
         .data-table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 500px; /* Ensures readable columns */
         }
 
         .data-table th, .data-table td {
@@ -370,7 +385,54 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             gap: 20px;
         }
 
+        .form-grid-inline {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
         .hidden { display: none !important; }
+
+        /* RESPONSIVE MOBILE BREAKPOINTS */
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 12px 0;
+                display: none; /* Toggled by menu button */
+            }
+            .sidebar.mobile-open {
+                display: flex;
+            }
+            .mobile-header-bar {
+                display: flex;
+            }
+            .main-content {
+                padding: 16px;
+            }
+            .top-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .chat-container {
+                height: 450px;
+            }
+            .form-grid-inline {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -381,32 +443,35 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             <h2>StanlOS Console</h2>
             <p>Administrator Sign In</p>
             
-            <div class="credentials-notice">
-                <div>Username: admin@stanlos.app</div>
-                <div>Password: admin123</div>
-            </div>
-            
             <div class="form-group">
                 <label>Username / Email</label>
-                <input type="text" id="login-username" class="form-input" value="admin@stanlos.app">
+                <input type="text" id="login-username" class="form-input" placeholder="admin@stanlos.app">
             </div>
             <div class="form-group">
                 <label>Password</label>
-                <input type="password" id="login-password" class="form-input" value="admin123">
+                <input type="password" id="login-password" class="form-input" placeholder="••••••••">
             </div>
             <button class="btn-primary" onclick="doLogin()">Log In to Console</button>
             <div id="login-err" style="color: var(--accent-red); font-size: 0.8rem; margin-top: 12px;"></div>
         </div>
     </div>
 
+    <!-- MOBILE HEADER BAR -->
+    <div class="mobile-header-bar">
+        <div>
+            <div class="brand-title">StanlOS</div>
+            <div class="brand-sub">CONTROL CENTER V2.0</div>
+        </div>
+        <button class="btn-secondary" onclick="toggleMobileMenu()"><i class="fa-solid fa-bars"></i> Menu</button>
+    </div>
+
     <!-- MAIN APP WRAPPER -->
     <div class="app-container">
         
         <!-- SIDEBAR -->
-        <aside class="sidebar">
-            <div class="brand-logo">
-                <div class="brand-title">StanlOS</div>
-                <div class="brand-sub">CONTROL CENTER V2.0</div>
+        <aside class="sidebar" id="app-sidebar">
+            <div class="brand-logo" style="display:none;" id="sidebar-logo-mobile">
+                <div class="brand-title">Navigation</div>
             </div>
             
             <ul class="nav-menu">
@@ -421,7 +486,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 <li class="nav-item" onclick="switchTab('settings', this)"><i class="fa-solid fa-sliders"></i> System Config</li>
             </ul>
 
-            <div style="margin-top: auto; padding: 0 24px;">
+            <div style="margin-top: auto; padding: 16px 24px 0;">
                 <button class="btn-secondary" style="width: 100%; text-align: center;" onclick="doLogout()">Logout</button>
             </div>
         </aside>
@@ -434,7 +499,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 <div class="page-title">
                     <h1 id="tab-header-title">Dashboard Overview</h1>
                 </div>
-                <div style="display: flex; gap: 16px; align-items: center;">
+                <div style="display: flex; gap: 16px; align-items: center; width: 100%; justify-content: space-between;">
                     <div class="status-badge" id="bot-main-badge">ONLINE</div>
                     <div style="font-size: 0.85rem; color: var(--text-muted);" id="user-badge">Stanley (Admin)</div>
                 </div>
@@ -464,7 +529,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 <div class="table-wrapper">
                     <h3 style="font-size: 1.1rem; margin-bottom: 8px;">Quick Actions</h3>
                     <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Execute autonomous agent commands directly.</p>
-                    <div style="display: flex; gap: 12px;">
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                         <button class="btn-secondary" onclick="quickAction('Log KES 500 for coffee')">Log Expense</button>
                         <button class="btn-secondary" onclick="quickAction('What is my financial summary?')">Check Financial Summary</button>
                     </div>
@@ -493,9 +558,6 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                         <div style="font-family:'Fira Code', monospace; font-size:0.85rem; display:flex; flex-direction:column; gap:8px;">
                             <div>Status: <span id="ub-status-text" style="color:var(--accent-red);">Checking...</span></div>
                             <div>Session String Configured: <span id="ub-session-text">No</span></div>
-                        </div>
-                        <div style="margin-top: 16px; font-size: 0.8rem; color: var(--text-muted);">
-                            To run the Userbot permanently on Render without phone verification, export PYROGRAM_SESSION_STRING and paste it in Render Environment Variables.
                         </div>
                     </div>
 
@@ -615,18 +677,16 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             <!-- CRM TAB -->
             <div id="tab-contacts" class="tab-panel">
                 <div class="table-wrapper">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                        <h3 style="font-size: 1.1rem;">CRM Contacts</h3>
-                    </div>
+                    <h3 style="font-size: 1.1rem; margin-bottom: 16px;">CRM Contacts</h3>
                     
-                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr 2fr auto; gap:10px; margin-bottom:16px;">
+                    <div class="form-grid-inline">
                         <input type="text" id="c-name" class="form-input" placeholder="Name">
                         <input type="text" id="c-company" class="form-input" placeholder="Company">
                         <input type="text" id="c-phone" class="form-input" placeholder="Phone">
                         <input type="text" id="c-email" class="form-input" placeholder="Email">
                         <input type="text" id="c-summary" class="form-input" placeholder="Context summary">
-                        <button class="btn-primary" style="padding:0 20px;" onclick="addContact()">Add Contact</button>
                     </div>
+                    <button class="btn-primary" style="margin-bottom: 16px;" onclick="addContact()">Add Contact</button>
 
                     <table class="data-table">
                         <thead>
@@ -650,7 +710,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 <div class="table-wrapper">
                     <h3 style="font-size: 1.1rem; margin-bottom: 16px;">Tasks Board</h3>
                     
-                    <div style="display:grid; grid-template-columns: 2fr 3fr 1fr auto; gap:10px; margin-bottom:16px;">
+                    <div class="form-grid-inline">
                         <input type="text" id="t-title" class="form-input" placeholder="Task Title">
                         <input type="text" id="t-desc" class="form-input" placeholder="Description">
                         <select id="t-prio" class="form-input">
@@ -658,8 +718,8 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                             <option value="2">Priority 2</option>
                             <option value="3" selected>Priority 3 (Normal)</option>
                         </select>
-                        <button class="btn-primary" style="padding:0 20px;" onclick="addTask()">Create Task</button>
                     </div>
+                    <button class="btn-primary" style="margin-bottom: 16px;" onclick="addTask()">Create Task</button>
 
                     <table class="data-table">
                         <thead>
@@ -683,11 +743,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 <div class="table-wrapper">
                     <h3 style="font-size: 1.1rem; margin-bottom: 16px;">System Memory & Facts</h3>
                     
-                    <div style="display:grid; grid-template-columns: 1fr 2fr auto; gap:10px; margin-bottom:16px;">
+                    <div class="form-grid-inline">
                         <input type="text" id="m-key" class="form-input" placeholder="Fact Key e.g. favorite_food">
                         <input type="text" id="m-val" class="form-input" placeholder="Fact Value e.g. Pizza">
-                        <button class="btn-primary" style="padding:0 20px;" onclick="addMemory()">Store Memory</button>
                     </div>
+                    <button class="btn-primary" style="margin-bottom: 16px;" onclick="addMemory()">Store Memory</button>
 
                     <table class="data-table">
                         <thead>
@@ -721,6 +781,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     </div>
 
     <script>
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('app-sidebar');
+            sidebar.classList.toggle('mobile-open');
+        }
+
         function doLogin() {
             const u = document.getElementById('login-username').value;
             const p = document.getElementById('login-password').value;
@@ -754,6 +819,10 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             document.getElementById('tab-' + name).classList.add('active');
             document.getElementById('tab-header-title').innerText = el.innerText.trim();
             
+            // Close mobile menu after switching tab
+            const sidebar = document.getElementById('app-sidebar');
+            sidebar.classList.remove('mobile-open');
+
             if(name === 'userbot') loadUserbotStatus();
             if(name === 'finance') loadFinance();
             if(name === 'contacts') loadContacts();
