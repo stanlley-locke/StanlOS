@@ -27,18 +27,62 @@ async def cmd_devops(event: Message | CallbackQuery):
         return await event.answer(text)
         
     text = (
-        f"<b>{SYMBOLS['devops']} SYSTEM ADMINISTRATION & DEVOPS</b>\n"
+        f"<b>System Administration & DevOps</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"<b>System Status:</b> {SYMBOLS['success']} ONLINE\n\n"
-        f"<b>Available Operations:</b>\n"
-        f"{SYMBOLS['bullet']} /stats - Server resource utilization gauges\n"
-        f"{SYMBOLS['bullet']} /health - Subsystem connectivity test"
+        f"<b>Status:</b> [OK] ONLINE\n\n"
+        f"• /stats - Resource utilization gauges\n"
+        f"• /health - Subsystem connectivity test\n"
+        f"• /db_vacuum - SQLite Cloud Database Optimization\n"
+        f"• /purge_cache - Clear Temporary File Caches"
     )
     buttons = [
-        [("📊 Resource Metrics", "devops:stats"), ("🔍 Health Diagnostics", "devops:health")]
+        [("Resource Metrics", "devops:stats"), ("Health Diagnostics", "devops:health")],
+        [("Optimize Database", "devops:vacuum"), ("Purge Temp Cache", "devops:purge_cache")]
     ]
     kb = build_sub_menu_kb(buttons)
     
+    if isinstance(event, Message):
+        await event.answer(text, reply_markup=kb)
+    else:
+        await event.message.edit_text(text, reply_markup=kb)
+
+@router.callback_query(F.data == "devops:vacuum")
+@router.message(Command("db_vacuum"))
+async def cb_vacuum(event: Message | CallbackQuery):
+    user_id = event.from_user.id
+    if not _is_admin(user_id):
+        return
+    
+    try:
+        await db.execute("PRAGMA optimize")
+        text = f"<b>Database Maintenance Complete</b>\n\n[OK] SQLite Cloud indices optimized and verified."
+    except Exception as e:
+        text = f"<b>Database Maintenance Failed:</b> {e}"
+        
+    kb = build_sub_menu_kb([])
+    if isinstance(event, Message):
+        await event.answer(text, reply_markup=kb)
+    else:
+        await event.message.edit_text(text, reply_markup=kb)
+
+@router.callback_query(F.data == "devops:purge_cache")
+@router.message(Command("purge_cache"))
+async def cb_purge_cache(event: Message | CallbackQuery):
+    user_id = event.from_user.id
+    if not _is_admin(user_id):
+        return
+    
+    import os, glob
+    count = 0
+    for f in glob.glob("storage/downloads/*"):
+        try:
+            os.remove(f)
+            count += 1
+        except Exception:
+            pass
+            
+    text = f"<b>Cache Purge Complete</b>\n\n[OK] Removed {count} temporary downloaded media files."
+    kb = build_sub_menu_kb([])
     if isinstance(event, Message):
         await event.answer(text, reply_markup=kb)
     else:

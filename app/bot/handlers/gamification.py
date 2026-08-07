@@ -21,29 +21,86 @@ async def increment_points(user_id: int, points: int):
     await db.execute(query, (points, user_id))
 
 @router.callback_query(F.data == "menu:gamification")
-@router.message(Command("gamification"))
+@router.message(Command("gamification", "games"))
 async def cb_gamification_menu(event: Message | CallbackQuery):
     user_id = event.from_user.id
     res = await db.execute("SELECT points FROM users WHERE tg_id = ?", (user_id,), fetch=True)
     points = res[0][0] if res and res[0][0] is not None else 0
     
     text = (
-        f"<b>{SYMBOLS['game']} GAMIFICATION & REWARDS</b>\n\n"
-        f"<b>Your Current Balance:</b> <code>{points} PTS</code> 🏆\n\n"
-        f"Earn points by completing daily check-ins, answering trivia quizzes, and finishing tasks!\n\n"
-        f"{SYMBOLS['bullet']} /checkin - Claim daily 5 PTS bonus\n"
-        f"{SYMBOLS['bullet']} /trivia &lt;topic&gt; - AI Trivia Challenge (+10 PTS)\n"
-        f"{SYMBOLS['bullet']} /leaderboard - View top scoring users"
+        f"<b>Gamification & Interactive Arcade</b>\n\n"
+        f"<b>Your Balance:</b> <code>{points} PTS</code> 🏆\n\n"
+        f"Earn points by completing daily check-ins, solving math speed games, and answering AI trivia quizzes!\n\n"
+        f"• /checkin - Claim daily bonus (+10 PTS)\n"
+        f"• /math_game - Speed Math Challenge (+50 PTS)\n"
+        f"• /trivia &lt;topic&gt; - AI Trivia Challenge (+10 PTS)\n"
+        f"• /leaderboard - View top scoring players"
     )
     buttons = [
-        [("✨ Claim Daily Bonus", "game:checkin"), ("❓ Play AI Trivia", "game:trivia")],
-        [("🏆 Leaderboard", "game:leaderboard")]
+        [("Claim Daily Bonus", "game:checkin"), ("Speed Math Game", "game:math_start")],
+        [("AI Trivia Quiz", "game:trivia"), ("Top Leaderboard", "game:leaderboard")]
     ]
     kb = build_sub_menu_kb(buttons)
     if isinstance(event, Message):
         await event.answer(text, reply_markup=kb)
     else:
         await event.message.edit_text(text, reply_markup=kb)
+
+@router.callback_query(F.data == "game:math_start")
+@router.message(Command("math_game"))
+async def cb_math_game(event: Message | CallbackQuery):
+    import random
+    n1 = random.randint(12, 45)
+    n2 = random.randint(3, 15)
+    n3 = random.randint(10, 50)
+    ans = (n1 * n2) + n3
+    
+    # Wrong choices
+    w1 = ans + random.choice([5, -5, 10])
+    w2 = ans + random.choice([2, -3, 7])
+    w3 = ans + random.choice([-10, 12, -4])
+    
+    choices = [ans, w1, w2, w3]
+    random.shuffle(choices)
+    
+    text = (
+        f"<b>Speed Math Challenge</b>\n\n"
+        f"What is the result of:\n"
+        f"<b>{n1} × {n2} + {n3} = ?</b>\n\n"
+        f"Select the correct answer below (+50 PTS for correct answer!):"
+    )
+    btn_row = []
+    for c in choices:
+        is_correct = "1" if c == ans else "0"
+        btn_row.append(InlineKeyboardButton(text=str(c), callback_data=f"math_ans:{is_correct}:{ans}"))
+        
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        btn_row[:2],
+        btn_row[2:],
+        [InlineKeyboardButton(text="« Back to Games", callback_data="menu:gamification")]
+    ])
+    if isinstance(event, Message):
+        await event.answer(text, reply_markup=kb)
+    else:
+        await event.message.edit_text(text, reply_markup=kb)
+
+@router.callback_query(F.data.startswith("math_ans:"))
+async def cb_math_answer(cb: CallbackQuery):
+    _, is_correct, ans = cb.data.split(":")
+    user_id = cb.from_user.id
+    
+    await db.execute("INSERT OR IGNORE INTO users (tg_id) VALUES (?)", (user_id,))
+    
+    if is_correct == "1":
+        await increment_points(user_id, 50)
+        await cb.answer("Correct! +50 PTS awarded!")
+        text = f"<b>Correct Answer!</b>\n\n<b>Reward:</b> +50 PTS 🏆\n{ans} was indeed the correct calculation!"
+    else:
+        await cb.answer("Incorrect answer!")
+        text = f"<b>Incorrect!</b>\n\nThe correct answer was: <code>{ans}</code>"
+        
+    kb = build_sub_menu_kb([[("Play Math Game Again", "game:math_start")]])
+    await cb.message.edit_text(text, reply_markup=kb)
 
 @router.callback_query(F.data == "game:checkin")
 @router.message(Command("checkin"))

@@ -416,3 +416,23 @@ async def wiki_api(req: WikiRequest):
     from app.agent.tools import wiki_search
     result = await wiki_search(req.query)
     return {"success": True, "result": result}
+
+@router.post("/admin/vacuum")
+async def admin_vacuum_api():
+    try:
+        await db.execute("PRAGMA optimize")
+        return {"success": True, "message": "SQLite Cloud database indices optimized successfully."}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@router.post("/admin/purge_cache")
+async def admin_purge_cache_api():
+    import os, glob
+    count = 0
+    for f in glob.glob("storage/downloads/*"):
+        try:
+            os.remove(f)
+            count += 1
+        except Exception:
+            pass
+    return {"success": True, "message": f"Cleared {count} temporary files from storage downloads."}

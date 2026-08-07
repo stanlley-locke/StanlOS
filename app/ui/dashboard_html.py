@@ -860,13 +860,24 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
             <!-- SETTINGS TAB -->
             <div id="tab-settings" class="tab-panel">
-                <div class="table-wrapper">
-                    <h3 style="font-size: 1.05rem; margin-bottom: 12px;">System Configuration</h3>
-                    <div style="font-family:'Fira Code', monospace; font-size:0.85rem; color:var(--text-muted); display:flex; flex-direction:column; gap:8px;">
-                        <div>Engine: FastAPI / Gunicorn UvicornWorker</div>
-                        <div>Telegram Bot: @stanlosbot</div>
-                        <div>AI Model: Cloudflare Llama 3.1 8B</div>
-                        <div>Database: SQLite Cloud Persistent Address</div>
+                <div class="grid-2">
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.05rem; margin-bottom: 12px;">System Configuration</h3>
+                        <div style="font-family:'Fira Code', monospace; font-size:0.85rem; color:var(--text-muted); display:flex; flex-direction:column; gap:8px;">
+                            <div>Engine: FastAPI / Gunicorn UvicornWorker</div>
+                            <div>Telegram Bot: @stanlosbot</div>
+                            <div>AI Model: Cloudflare Llama 3.1 8B</div>
+                            <div>Database: SQLite Cloud Persistent Address</div>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.05rem; margin-bottom: 12px;">Admin Maintenance Operations</h3>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+                            <button class="btn-secondary" onclick="adminVacuum()">Optimize SQLite Cloud DB</button>
+                            <button class="btn-secondary" onclick="adminPurgeCache()">Purge Temp Storage Cache</button>
+                        </div>
+                        <div id="admin-maint-res" style="font-family:'Fira Code', monospace; font-size:0.85rem; color:var(--primary-blue);"></div>
                     </div>
                 </div>
             </div>
@@ -1338,6 +1349,20 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             })
             .then(r => r.json())
             .then(d => { document.getElementById('wiki-res').innerText = d.result; });
+        }
+
+        function adminVacuum() {
+            document.getElementById('admin-maint-res').innerText = 'Optimizing database indices...';
+            fetch('/api/admin/vacuum', { method: 'POST' })
+            .then(r => r.json())
+            .then(d => { document.getElementById('admin-maint-res').innerText = d.message || d.error; });
+        }
+
+        function adminPurgeCache() {
+            document.getElementById('admin-maint-res').innerText = 'Purging cache...';
+            fetch('/api/admin/purge_cache', { method: 'POST' })
+            .then(r => r.json())
+            .then(d => { document.getElementById('admin-maint-res').innerText = d.message; });
         }
 
         // Auto load finance on startup
