@@ -58,6 +58,7 @@ class DatabaseManager:
                 username TEXT,
                 points INTEGER DEFAULT 0,
                 settings_json TEXT DEFAULT '{}',
+                role TEXT DEFAULT 'guest',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
             """,
@@ -154,6 +155,18 @@ class DatabaseManager:
                         cleaned = sub_stmt.strip()
                         if cleaned:
                             cursor.execute(cleaned)
+                            
+                # Migration for existing databases
+                try:
+                    cursor.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'guest'")
+                except Exception:
+                    pass
+                    
+                # Sync Admin IDs from config
+                if settings.ADMIN_IDS:
+                    placeholders = ','.join('?' * len(settings.ADMIN_IDS))
+                    cursor.execute(f"UPDATE users SET role = 'admin' WHERE tg_id IN ({placeholders})", settings.ADMIN_IDS)
+                    
                 conn.commit()
 
         try:

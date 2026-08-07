@@ -10,11 +10,15 @@ bot = Bot(
     default=DefaultBotProperties(parse_mode=ParseMode.HTML)
 )
 
-from app.bot.handlers import chat, knowledge_base, media, academic, gamification, devops, start, finance, crm
+from app.bot.handlers import chat, knowledge_base, media, academic, gamification, devops, start, finance, crm, apps
+
+from app.bot.middlewares.rbac import RBACMiddleware
 
 dp = Dispatcher()
-
+dp.message.middleware(RBACMiddleware())
+dp.callback_query.middleware(RBACMiddleware())
 dp.include_router(start.router)
+dp.include_router(apps.router)
 dp.include_router(finance.router)
 dp.include_router(crm.router)
 dp.include_router(knowledge_base.router)

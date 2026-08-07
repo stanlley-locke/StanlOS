@@ -80,18 +80,17 @@ def format_dashboard(data: dict) -> str:
     top_cat_amount = data.get("top_cat_amount", 0.0)
 
     text = (
-        f"<b>StanlOS Executive Console</b>\n"
+        f"<b>STANLOS EXECUTIVE CONSOLE</b>\n"
         f"<i>{now}</i>\n\n"
-        f"<b>Financial Overview</b>\n"
-        f"├ Net Balance   : <b>Ksh {net_balance:,.2f}</b>\n"
-        f"├ Total Income  : <b>+Ksh {total_income:,.2f}</b>\n"
-        f"└ Total Expense : <b>-Ksh {total_expense:,.2f}</b>\n\n"
-        f"<b>Spending Summary</b>\n"
-        f"└ Top Category  : <b>{top_category.upper()}</b> (Ksh {top_cat_amount:,.2f})\n\n"
-        f"<b>System Workload & Intelligence</b>\n"
-        f"├ Pending Tasks : <b>{pending_tasks_count}</b> items\n"
-        f"├ RAG Documents : <b>{knowledge_count}</b> indexed\n"
-        f"└ CRM Contacts  : <b>{contacts_count}</b> recorded"
+        f"<b>📊 FINANCIAL INTELLIGENCE</b>\n"
+        f"<code>  Net Balance  : Ksh {net_balance:,.2f}</code>\n"
+        f"<code>  Cash Inflow  : +Ksh {total_income:,.2f}</code>\n"
+        f"<code>  Cash Outflow : -Ksh {total_expense:,.2f}</code>\n"
+        f"<code>  Top Expense  : {top_category.upper()} (Ksh {top_cat_amount:,.2f})</code>\n\n"
+        f"<b>⚡ SYSTEM & WORKLOAD METRICS</b>\n"
+        f"<code>  Active Tasks : {pending_tasks_count} pending</code>\n"
+        f"<code>  RAG Memory   : {knowledge_count} documents</code>\n"
+        f"<code>  CRM Network  : {contacts_count} contacts</code>"
     )
     return text
 
@@ -110,7 +109,7 @@ def build_main_menu_kb(is_admin: bool = True) -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="Media", callback_data="menu:media")
         ],
         [
-            InlineKeyboardButton(text="Tools", callback_data="menu:tools"),
+            InlineKeyboardButton(text="App Store", callback_data="menu:apps"),
             InlineKeyboardButton(text="Forecasts", callback_data="menu:forecasts")
         ],
         [

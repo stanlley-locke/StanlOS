@@ -13,14 +13,15 @@ from app.utils.formatters import SYMBOLS, build_sub_menu_kb, make_progress_bar
 router = Router()
 logger = logging.getLogger(__name__)
 
-def _is_admin(user_id: int) -> bool:
-    return user_id in settings.ADMIN_IDS
+async def _is_admin(user_id: int) -> bool:
+    rows = await db.execute("SELECT role FROM users WHERE tg_id = ?", (user_id,), fetch=True)
+    return rows and rows[0][0] == 'admin'
 
 @router.callback_query(F.data == "menu:devops")
 @router.message(Command("devops", "ec2"))
 async def cmd_devops(event: Message | CallbackQuery):
     user_id = event.from_user.id
-    if not _is_admin(user_id):
+    if not await _is_admin(user_id):
         text = f"{SYMBOLS['alert']} Admin access required."
         if isinstance(event, CallbackQuery):
             return await event.answer(text, show_alert=True)
@@ -50,7 +51,7 @@ async def cmd_devops(event: Message | CallbackQuery):
 @router.message(Command("db_vacuum"))
 async def cb_vacuum(event: Message | CallbackQuery):
     user_id = event.from_user.id
-    if not _is_admin(user_id):
+    if not await _is_admin(user_id):
         return
     
     try:
@@ -69,7 +70,7 @@ async def cb_vacuum(event: Message | CallbackQuery):
 @router.message(Command("purge_cache"))
 async def cb_purge_cache(event: Message | CallbackQuery):
     user_id = event.from_user.id
-    if not _is_admin(user_id):
+    if not await _is_admin(user_id):
         return
     
     import os, glob
@@ -92,7 +93,7 @@ async def cb_purge_cache(event: Message | CallbackQuery):
 @router.message(Command("stats"))
 async def cmd_stats(event: Message | CallbackQuery):
     user_id = event.from_user.id
-    if not _is_admin(user_id):
+    if not await _is_admin(user_id):
         text = f"{SYMBOLS['alert']} Admin access required."
         if isinstance(event, CallbackQuery):
             return await event.answer(text, show_alert=True)
@@ -129,7 +130,7 @@ async def cmd_stats(event: Message | CallbackQuery):
 @router.message(Command("health"))
 async def cmd_health(event: Message | CallbackQuery):
     user_id = event.from_user.id
-    if not _is_admin(user_id):
+    if not await _is_admin(user_id):
         text = f"{SYMBOLS['alert']} Admin access required."
         if isinstance(event, CallbackQuery):
             return await event.answer(text, show_alert=True)
@@ -167,3 +168,49 @@ async def cmd_health(event: Message | CallbackQuery):
     )
     kb = build_sub_menu_kb([])
     await status_msg.edit_text(text, reply_markup=kb)
+
+@router.message(Command("invite_admin"))
+async def cmd_invite_admin(message: Message):
+    parts = message.text.split()
+    if len(parts) < 2:
+        return await message.answer("Usage: <code>/invite_admin &lt;user_id_or_username&gt;</code>")
+    target = parts[1].replace('@', '')
+    
+    rows = await db.execute("SELECT tg_id FROM users WHERE tg_id = ? OR username = ?", (target, target), fetch=True)
+    if not rows:
+        return await message.answer(f"Could not find user '{target}' in the database. They must start the bot first.")
+        
+    tg_id = rows[0][0]
+    await db.execute("UPDATE users SET role = 'admin' WHERE tg_id = ?", (tg_id,))
+    await message.answer(f"{SYMBOLS['success']} User <b>{target}</b> has been promoted to Administrator.")
+
+@router.message(Command("demote"))
+async def cmd_demote(message: Message):
+    parts = message.text.split()
+    if len(parts) < 2:
+        return await message.answer("Usage: <code>/demote &lt;user_id_or_username&gt;</code>")
+    target = parts[1].replace('@', '')
+    
+    rows = await db.execute("SELECT tg_id FROM users WHERE tg_id = ? OR username = ?", (target, target), fetch=True)
+    if not rows:
+        return await message.answer(f"Could not find user '{target}' in the database.")
+        
+    tg_id = rows[0][0]
+    if tg_id == message.from_user.id:
+        return await message.answer(f"{SYMBOLS['alert']} You cannot demote yourself.")
+        
+    await db.execute("UPDATE users SET role = 'guest' WHERE tg_id = ?", (tg_id,))
+    await message.answer(f"{SYMBOLS['success']} User <b>{target}</b> has been demoted to Guest.")
+
+@router.message(Command("list_admins"))
+async def cmd_list_admins(message: Message):
+    rows = await db.execute("SELECT tg_id, full_name, username FROM users WHERE role = 'admin'", fetch=True)
+    if not rows:
+        return await message.answer("No administrators found.")
+        
+    text = "<b>👑 SYSTEM ADMINISTRATORS</b>\n\n"
+    for r in rows:
+        username_str = f" (@{r[2]})" if r[2] else ""
+        text += f"• <code>{r[0]}</code> - {r[1]}{username_str}\n"
+        
+    await message.answer(text)

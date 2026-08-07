@@ -110,8 +110,14 @@ async def cmd_help(event: Message | CallbackQuery):
 @router.callback_query(F.data == "menu:workload")
 async def cb_workload(cb: CallbackQuery):
     user_id = cb.from_user.id
-    from app.agent.tools import list_tasks
-    tasks_text = await list_tasks(user_id)
+    try:
+        rows = await db.execute("SELECT id, title, due_date FROM tasks WHERE user_id = ? AND status = 'pending' ORDER BY due_date ASC", (user_id,), fetch=True)
+        if not rows:
+            tasks_text = "No pending tasks."
+        else:
+            tasks_text = "\n".join([f"• #{r[0]}: {r[1]} (Due: {r[2]})" for r in rows])
+    except Exception as e:
+        tasks_text = f"Error fetching tasks: {e}"
     text = (
         f"<b>Workload & Task Management</b>\n\n"
         f"<b>Current Tasks:</b>\n{tasks_text}\n\n"

@@ -440,3 +440,8 @@ async def translate_text(text: str, target_language: str = "Swahili") -> str:
     translated = await ai_client.generate_text(messages)
     return translated.strip() if translated else f"Translation ({target_language}): {text}"
 
+# Dynamically load all modular apps (Composio style architecture)
+try:
+    import app.apps
+except ImportError as e:
+    logger.warning(f"Failed to load apps module: {e}")
