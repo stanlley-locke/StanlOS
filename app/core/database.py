@@ -16,16 +16,12 @@ class DatabaseManager:
     def _get_connection(self):
         conn = None
         try:
-            if self._connection_string and self._connection_string.startswith("sqlitecloud://"):
-                try:
-                    conn = sqlitecloud.connect(self._connection_string)
-                except Exception as cloud_err:
-                    logger.warning(f"SQLite Cloud connection failed ({cloud_err}). Falling back to local SQLite...")
-                    import sqlite3
-                    conn = sqlite3.connect("storage/stanlos.db")
-            else:
-                import sqlite3
-                conn = sqlite3.connect("storage/stanlos.db")
+            conn_str = settings.SQLITE_CLOUD_CONN_STR or self._connection_string
+            if not conn_str:
+                raise RuntimeError("SQLITE_CLOUD_CONN_STR is missing in configuration.")
+            
+            # Connect strictly to SQLite Cloud (ssqlitecloud:// or sqlitecloud://)
+            conn = sqlitecloud.connect(conn_str)
             yield conn
         finally:
             if conn:
