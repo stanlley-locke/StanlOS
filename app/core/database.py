@@ -16,14 +16,23 @@ class DatabaseManager:
     def _get_connection(self):
         conn = None
         try:
-            conn = sqlitecloud.connect(self._connection_string)
+            if self._connection_string and self._connection_string.startswith("sqlitecloud://"):
+                try:
+                    conn = sqlitecloud.connect(self._connection_string)
+                except Exception as cloud_err:
+                    logger.warning(f"SQLite Cloud connection failed ({cloud_err}). Falling back to local SQLite...")
+                    import sqlite3
+                    conn = sqlite3.connect("storage/stanlos.db")
+            else:
+                import sqlite3
+                conn = sqlite3.connect("storage/stanlos.db")
             yield conn
-        except Exception as e:
-            logger.error(f"Database connection error: {e}")
-            raise
         finally:
             if conn:
-                conn.close()
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     async def execute(self, query: str, params: Tuple = (), fetch: bool = False) -> Any:
         def _sync_execute():
@@ -145,7 +154,10 @@ class DatabaseManager:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 for stmt in schema_statements:
-                    cursor.execute(stmt)
+                    for sub_stmt in stmt.split(';'):
+                        cleaned = sub_stmt.strip()
+                        if cleaned:
+                            cursor.execute(cleaned)
                 conn.commit()
 
         try:
@@ -153,6 +165,5 @@ class DatabaseManager:
             logger.info("Database schema initialized successfully.")
         except Exception as e:
             logger.error(f"Schema initialization failed: {e}")
-            raise
 
 db = DatabaseManager()
