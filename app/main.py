@@ -3,8 +3,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from fastapi.responses import HTMLResponse
+
 from app.core.config import settings
-from app.api import webhooks_telegram, webhooks_sms, webhooks_github
+from app.api import webhooks_telegram, webhooks_sms, webhooks_github, dashboard_api
+from app.ui.dashboard_html import DASHBOARD_HTML
 from app.bot.dispatcher import set_webhook, delete_webhook, set_bot_commands, dp, bot
 from app.core.database import db
 from app.services.userbot import userbot_service
@@ -67,15 +70,11 @@ app.add_middleware(
 app.include_router(webhooks_telegram.router, tags=["Telegram"])
 app.include_router(webhooks_sms.router, tags=["SMS Webhooks"])
 app.include_router(webhooks_github.router, tags=["GitHub Webhooks"])
+app.include_router(dashboard_api.router)
 
-@app.get("/", tags=["System"])
+@app.get("/", response_class=HTMLResponse, tags=["Dashboard"])
 async def root():
-    return {
-        "status": "online",
-        "system": "StanlOS V2",
-        "bot": "@stanlosbot",
-        "docs": "/docs"
-    }
+    return HTMLResponse(content=DASHBOARD_HTML)
 
 @app.get("/health", tags=["System"])
 async def health_check():
