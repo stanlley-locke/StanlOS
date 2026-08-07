@@ -95,40 +95,41 @@ class MediaToolsService:
             logger.error(f"Error downloading media audio from {url}: {e}")
             return None, str(e), "Error"
 
-    async def search_youtube_songs(self, query: str, max_results: int = 5, limit: int = 5) -> list[dict]:
+    async def search_soundcloud_songs(self, query: str, max_results: int = 5, limit: int = 5) -> list[dict]:
         """
-        Searches YouTube for music tracks/songs using ytsearch5:<query>.
-        Returns list of dicts: [{'title': ..., 'url': ..., 'duration': ..., 'uploader': ..., 'id': ...}]
+        Searches SoundCloud for music tracks/songs using scsearch:<query> to bypass YouTube bot blocks.
         """
         count = max_results if max_results != 5 else limit
         ydl_opts = {
-            'default_search': 'ytsearch',
+            'default_search': 'scsearch',
             'nocheckcertificate': True,
             'ignoreerrors': True,
             'no_warnings': True,
             'quiet': True,
             'extract_flat': True,
-            'extractor_args': {'youtube': ['client=ANDROID_MUSIC,ANDROID,IOS']}
         }
         
         def _search():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                res = ydl.extract_info(f"ytsearch{count}:{query}", download=False)
+                res = ydl.extract_info(f"scsearch{count}:{query}", download=False)
                 if not res or 'entries' not in res:
                     return []
                 results = []
                 for entry in res['entries']:
                     if not entry:
                         continue
-                    vid_id = entry.get('id')
-                    url = entry.get('url') or f"https://www.youtube.com/watch?v={vid_id}"
+                    url = entry.get('url')
+                    if not url:
+                        continue
                     dur_sec = entry.get('duration', 0) or 0
                     dur_str = f"{int(dur_sec // 60)}:{int(dur_sec % 60):02d}" if dur_sec else "N/A"
+                    # We pass the full URL safely by storing it or using a shorter identifier if possible,
+                    # but Soundcloud URLs are sometimes long. We will return the URL.
                     results.append({
-                        'id': vid_id,
+                        'id': str(entry.get('id', '')),
                         'title': entry.get('title', 'Unknown Track'),
                         'url': url,
-                        'uploader': entry.get('uploader') or entry.get('channel') or 'Artist',
+                        'uploader': entry.get('uploader') or 'Artist',
                         'duration': dur_str
                     })
                 return results
@@ -136,7 +137,7 @@ class MediaToolsService:
         try:
             return await asyncio.to_thread(_search)
         except Exception as e:
-            logger.error(f"Error searching YouTube for '{query}': {e}")
+            logger.error(f"Error searching SoundCloud for '{query}': {e}")
             return []
 
     async def extract_text_from_pdf(self, file_path: str) -> str:

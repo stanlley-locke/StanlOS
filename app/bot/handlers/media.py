@@ -60,15 +60,15 @@ async def cmd_yt_download(message: Message):
 
     # Check if query is a direct URL or a search query
     if not (query.startswith("http://") or query.startswith("https://")):
-        status_msg = await message.answer(f"{SYMBOLS['ai']} Searching YouTube for <i>'{safe_html(query)}'</i>...")
-        results = await media_tools.search_youtube_songs(query, max_results=5)
+        status_msg = await message.answer(f"{SYMBOLS['ai']} Searching SoundCloud for <i>'{safe_html(query)}'</i> (Bypassing YouTube bot blocks)...")
+        results = await media_tools.search_soundcloud_songs(query, max_results=5)
         await status_msg.delete()
         
         if not results:
-            return await message.answer(f"{SYMBOLS['alert']} No YouTube songs found matching <i>'{safe_html(query)}'</i>.")
+            return await message.answer(f"{SYMBOLS['alert']} No SoundCloud songs found matching <i>'{safe_html(query)}'</i>.")
             
         text_lines = [
-            f"🎵 <b>YOUTUBE MUSIC SEARCH</b>\n",
+            f"🎵 <b>SOUNDCLOUD MUSIC SEARCH</b>\n",
             f"Query: <i>{safe_html(query)}</i>\n"
         ]
         
@@ -76,7 +76,13 @@ async def cmd_yt_download(message: Message):
         for idx, track in enumerate(results, 1):
             text_lines.append(f"{idx}. <b>{safe_html(track['title'])}</b> ({track['duration']})\n   👤 <i>{safe_html(track['uploader'])}</i>\n")
             btn_title = (track['title'][:24] + "..") if len(track['title']) > 24 else track['title']
-            kb_rows.append([InlineKeyboardButton(text=f"🎵 {idx}. {btn_title} ({track['duration']})", callback_data=f"ytdl:{track['id']}")])
+            
+            # Use URL if it fits in 64 bytes, else fallback to API track URL
+            callback_str = f"scdl:{track['url']}"
+            if len(callback_str.encode('utf-8')) > 64:
+                callback_str = f"scdl:https://api.soundcloud.com/tracks/{track['id']}"
+                
+            kb_rows.append([InlineKeyboardButton(text=f"🎵 {idx}. {btn_title} ({track['duration']})", callback_data=callback_str[:64])])
             
         text_lines.append("<i>Select a song below to download MP3 audio:</i>")
         kb_rows.append([InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")])
@@ -113,12 +119,11 @@ async def cmd_yt_download(message: Message):
             fail_text = f"{SYMBOLS['alert']} Extraction failed: {safe_html(title)}"
         await message.answer(fail_text)
 
-@router.callback_query(F.data.startswith("ytdl:"))
-async def cb_ytdl_download(cb: CallbackQuery):
-    vid_id = cb.data.split(":", 1)[1]
-    url = f"https://www.youtube.com/watch?v={vid_id}"
+@router.callback_query(F.data.startswith("scdl:"))
+async def cb_scdl_download(cb: CallbackQuery):
+    url = cb.data.split(":", 1)[1]
     
-    await cb.message.edit_text(f"{SYMBOLS['ai']} Downloading and converting audio stream to MP3...")
+    await cb.message.edit_text(f"{SYMBOLS['ai']} Downloading and converting audio stream to MP3 from SoundCloud...")
     
     file_path, title, artist = await media_tools.download_media_audio(url)
     
@@ -144,7 +149,7 @@ async def cb_ytdl_download(cb: CallbackQuery):
         except Exception:
             pass
     else:
-        await cb.message.edit_text(f"{SYMBOLS['alert']} Extraction failed for track ID <code>{vid_id}</code>.")
+        await cb.message.edit_text(f"{SYMBOLS['alert']} Extraction failed. SoundCloud may be unavailable.")
     await cb.answer()
 
 @router.message(F.document)
