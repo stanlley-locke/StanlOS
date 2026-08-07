@@ -12,10 +12,15 @@ from app.core.database import db
 from app.agent.executor import agent
 from app.services.media_tools import media_tools
 from app.services.userbot import userbot_service
+from app.services.finance import FinanceService
+from app.services.knowledge_base import KnowledgeBaseService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["Dashboard API"])
+
+finance_service = FinanceService()
+kb_service = KnowledgeBaseService()
 
 class LoginRequest(BaseModel):
     username: str
@@ -53,6 +58,19 @@ class AgentChatRequest(BaseModel):
 class MediaSearchRequest(BaseModel):
     query: str
 
+class MediaDownloadRequest(BaseModel):
+    url: str
+
+class UserbotSendMessageRequest(BaseModel):
+    recipient: str
+    message: str
+
+class SMSParseRequest(BaseModel):
+    sms_text: str
+
+class DocumentAskRequest(BaseModel):
+    query: str
+
 # Default Admin Authentication
 @router.post("/auth/login")
 async def login(req: LoginRequest):
@@ -81,13 +99,9 @@ async def login(req: LoginRequest):
 
 @router.get("/dashboard/stats")
 async def get_dashboard_stats():
-    # System metrics
     cpu_usage = psutil.cpu_percent(interval=0.1)
     memory = psutil.virtual_memory()
     ram_usage = memory.percent
-    
-    # DB metrics
-    admin_id = settings.ADMIN_IDS[0] if settings.ADMIN_IDS else 0
     
     txns = await db.execute("SELECT COUNT(*), SUM(amount) FROM transactions", fetch=True)
     txn_count = txns[0][0] if txns else 0
@@ -115,8 +129,6 @@ async def get_dashboard_stats():
 
 @router.get("/finance/summary")
 async def get_finance_summary():
-    admin_id = settings.ADMIN_IDS[0] if settings.ADMIN_IDS else 0
-    
     txns = await db.execute(
         "SELECT id, transaction_code, amount, fee, vendor, category, transaction_type, created_at FROM transactions ORDER BY id DESC LIMIT 20",
         fetch=True
@@ -160,6 +172,12 @@ async def add_finance_log(req: FinanceLogRequest):
     """
     await db.execute(query, (admin_id, code, req.amount, req.vendor, req.category, req.transaction_type))
     return {"success": True, "message": "Transaction logged successfully"}
+
+@router.post("/finance/parse_sms")
+async def parse_sms(req: SMSParseRequest):
+    admin_id = settings.ADMIN_IDS[0] if settings.ADMIN_IDS else 0
+    result = await finance_service.parse_and_log_transaction("SMS_SIMULATOR", req.sms_text, admin_id)
+    return {"success": True, "result": result or "Non-transactional SMS."}
 
 @router.get("/tasks")
 async def get_tasks():
@@ -261,3 +279,34 @@ async def agent_chat(req: AgentChatRequest):
 async def media_search(req: MediaSearchRequest):
     tracks = await media_tools.search_youtube_songs(req.query, limit=5)
     return {"success": True, "results": tracks}
+
+@router.post("/media/download")
+async def media_download(req: MediaDownloadRequest):
+    filepath, title, artist = await media_tools.download_media_audio(req.url)
+    return {
+        "success": bool(filepath),
+        "title": title,
+        "artist": artist,
+        "filepath": filepath or "Unavailable"
+    }
+
+@router.get("/userbot/status")
+async def userbot_status():
+    return {
+        "is_running": userbot_service.is_running,
+        "has_session_string": bool(settings.PYROGRAM_SESSION_STRING),
+        "api_id_set": bool(settings.API_ID)
+    }
+
+@router.post("/userbot/send")
+async def userbot_send_msg(req: UserbotSendMessageRequest):
+    if not userbot_service.is_running:
+        return {"success": False, "error": "Userbot is not running. Set PYROGRAM_SESSION_STRING env variable on Render to activate Userbot."}
+    res = await userbot_service.send_message(req.recipient, req.message)
+    return {"success": "successfully" in res, "result": res}
+
+@router.post("/academic/ask")
+async def academic_ask(req: DocumentAskRequest):
+    admin_id = settings.ADMIN_IDS[0] if settings.ADMIN_IDS else 0
+    docs = await kb_service.search_similar(admin_id, req.query, top_k=3)
+    return {"success": True, "documents": docs}

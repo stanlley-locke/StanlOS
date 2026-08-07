@@ -31,7 +31,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             padding: 0;
             box-sizing: border-box;
             font-family: 'Inter', sans-serif;
-            border-radius: 0 !important; /* Square corners everywhere */
+            border-radius: 0 !important; /* Square corners */
             box-shadow: none !important;  /* No glowy elements */
             text-shadow: none !important;
         }
@@ -43,7 +43,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             overflow-x: hidden;
         }
 
-        /* LOGIN MODAL OVERLAY */
+        /* LOGIN MODAL */
         #login-modal {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -99,7 +99,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             margin-bottom: 6px;
         }
 
-        .form-input {
+        .form-input, select, textarea {
             width: 100%;
             background: var(--bg-input);
             border: 1px solid var(--border);
@@ -110,7 +110,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             transition: border-color 0.15s ease;
         }
 
-        .form-input:focus {
+        .form-input:focus, select:focus, textarea:focus {
             border-color: var(--accent-blue);
         }
 
@@ -152,7 +152,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
         /* SIDEBAR */
         .sidebar {
-            width: 240px;
+            width: 250px;
             background: var(--bg-panel);
             border-right: 1px solid var(--border);
             padding: 24px 0;
@@ -245,7 +245,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         /* STATS GRID */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 16px;
             margin-bottom: 28px;
         }
@@ -326,11 +326,12 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             border-top: 1px solid var(--border);
         }
 
-        /* DATA TABLES */
+        /* DATA TABLES & FORMS */
         .table-wrapper {
             background: var(--bg-panel);
             border: 1px solid var(--border);
             padding: 20px;
+            margin-bottom: 24px;
         }
 
         .data-table {
@@ -362,6 +363,12 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         }
         .tag-expense { border-color: var(--accent-red); color: var(--accent-red); }
         .tag-income { border-color: var(--accent-green); color: var(--accent-green); }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
 
         .hidden { display: none !important; }
     </style>
@@ -405,8 +412,9 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             <ul class="nav-menu">
                 <li class="nav-item active" onclick="switchTab('overview', this)"><i class="fa-solid fa-chart-line"></i> Overview</li>
                 <li class="nav-item" onclick="switchTab('agent', this)"><i class="fa-solid fa-terminal"></i> AI Agent Chat</li>
+                <li class="nav-item" onclick="switchTab('userbot', this)"><i class="fa-solid fa-paper-plane"></i> Userbot Controller</li>
                 <li class="nav-item" onclick="switchTab('finance', this)"><i class="fa-solid fa-credit-card"></i> Finance & MPESA</li>
-                <li class="nav-item" onclick="switchTab('media', this)"><i class="fa-solid fa-music"></i> YouTube & Media</li>
+                <li class="nav-item" onclick="switchTab('media', this)"><i class="fa-solid fa-download"></i> Media & TikTok Hub</li>
                 <li class="nav-item" onclick="switchTab('contacts', this)"><i class="fa-solid fa-users"></i> CRM Contacts</li>
                 <li class="nav-item" onclick="switchTab('tasks', this)"><i class="fa-solid fa-check-square"></i> Tasks Board</li>
                 <li class="nav-item" onclick="switchTab('memory', this)"><i class="fa-solid fa-database"></i> Memory & RAG</li>
@@ -427,7 +435,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                     <h1 id="tab-header-title">Dashboard Overview</h1>
                 </div>
                 <div style="display: flex; gap: 16px; align-items: center;">
-                    <div class="status-badge">ONLINE</div>
+                    <div class="status-badge" id="bot-main-badge">ONLINE</div>
                     <div style="font-size: 0.85rem; color: var(--text-muted);" id="user-badge">Stanley (Admin)</div>
                 </div>
             </div>
@@ -476,6 +484,37 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 </div>
             </div>
 
+            <!-- USERBOT CONTROLLER TAB -->
+            <div id="tab-userbot" class="tab-panel">
+                <div class="grid-2">
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 8px;">Userbot Status & Configuration</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">MTProto Pyrogram Userbot status on cloud server.</p>
+                        <div style="font-family:'Fira Code', monospace; font-size:0.85rem; display:flex; flex-direction:column; gap:8px;">
+                            <div>Status: <span id="ub-status-text" style="color:var(--accent-red);">Checking...</span></div>
+                            <div>Session String Configured: <span id="ub-session-text">No</span></div>
+                        </div>
+                        <div style="margin-top: 16px; font-size: 0.8rem; color: var(--text-muted);">
+                            To run the Userbot permanently on Render without phone verification, export PYROGRAM_SESSION_STRING and paste it in Render Environment Variables.
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 12px;">Send Direct Message as Userbot</h3>
+                        <div class="form-group">
+                            <label>Recipient (@username or Phone)</label>
+                            <input type="text" id="ub-recipient" class="form-input" placeholder="@username">
+                        </div>
+                        <div class="form-group">
+                            <label>Message Content</label>
+                            <textarea id="ub-msg" class="form-input" rows="3" placeholder="Message text..."></textarea>
+                        </div>
+                        <button class="btn-primary" onclick="sendUserbotMsg()">Send Message</button>
+                        <div id="ub-send-res" style="font-size: 0.8rem; margin-top: 10px; font-family:'Fira Code', monospace;"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- FINANCE TAB -->
             <div id="tab-finance" class="tab-panel">
                 <div class="stats-grid" style="margin-bottom: 24px;">
@@ -490,6 +529,42 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                     <div class="stat-card">
                         <div class="stat-label">Net Balance</div>
                         <div class="stat-value" id="fin-net">KES 0.00</div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 12px;">Log New Transaction</h3>
+                        <div class="form-group">
+                            <label>Amount (KES)</label>
+                            <input type="number" id="fin-add-amount" class="form-input" placeholder="500">
+                        </div>
+                        <div class="form-group">
+                            <label>Vendor / Recipient</label>
+                            <input type="text" id="fin-add-vendor" class="form-input" placeholder="Supermarket">
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <input type="text" id="fin-add-cat" class="form-input" placeholder="Food">
+                        </div>
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select id="fin-add-type" class="form-input">
+                                <option value="expense">Expense</option>
+                                <option value="income">Income</option>
+                            </select>
+                        </div>
+                        <button class="btn-primary" onclick="submitFinanceLog()">Log Transaction</button>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 12px;">SMS Parser Simulator</h3>
+                        <div class="form-group">
+                            <label>Paste Raw MPESA / Bank SMS</label>
+                            <textarea id="sms-raw-input" class="form-input" rows="5" placeholder="SDF897123 Confirmed. Ksh500 sent to John Doe..."></textarea>
+                        </div>
+                        <button class="btn-secondary" style="width:100%; text-align:center;" onclick="testSmsParse()">Parse SMS</button>
+                        <div id="sms-parse-out" style="font-size: 0.8rem; margin-top: 10px; font-family:'Fira Code', monospace; color: var(--accent-blue);"></div>
                     </div>
                 </div>
 
@@ -515,20 +590,44 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
             <!-- MEDIA TAB -->
             <div id="tab-media" class="tab-panel">
-                <div class="table-wrapper">
-                    <h3 style="font-size: 1.1rem; margin-bottom: 12px;">YouTube Media Search</h3>
-                    <div style="display: flex; gap: 12px;">
-                        <input type="text" id="yt-search-query" class="form-input" placeholder="Song query e.g. Alan Walker Faded..." onkeydown="if(event.key==='Enter') searchYouTube()">
-                        <button class="btn-primary" style="width: auto; padding: 0 20px;" onclick="searchYouTube()">Search</button>
+                <div class="grid-2">
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 12px;">YouTube Song Search</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="yt-search-query" class="form-input" placeholder="Song query e.g. Alan Walker Faded..." onkeydown="if(event.key==='Enter') searchYouTube()">
+                            <button class="btn-primary" style="width: auto; padding: 0 20px;" onclick="searchYouTube()">Search</button>
+                        </div>
+                        <div id="yt-results" style="margin-top: 16px; display: flex; flex-direction: column; gap: 10px;"></div>
                     </div>
-                    <div id="yt-results" style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;"></div>
+
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 12px;">TikTok, Instagram, Twitter Audio Extract</h3>
+                        <div class="form-group">
+                            <label>Paste Media URL</label>
+                            <input type="text" id="media-dl-url" class="form-input" placeholder="https://vm.tiktok.com/... or https://instagram.com/p/...">
+                        </div>
+                        <button class="btn-primary" onclick="downloadMediaStream()">Extract Audio Stream</button>
+                        <div id="media-dl-res" style="font-size: 0.8rem; margin-top: 12px; font-family:'Fira Code', monospace;"></div>
+                    </div>
                 </div>
             </div>
 
             <!-- CRM TAB -->
             <div id="tab-contacts" class="tab-panel">
                 <div class="table-wrapper">
-                    <h3 style="font-size: 1.1rem; margin-bottom: 16px;">CRM Contacts</h3>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <h3 style="font-size: 1.1rem;">CRM Contacts</h3>
+                    </div>
+                    
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr 2fr auto; gap:10px; margin-bottom:16px;">
+                        <input type="text" id="c-name" class="form-input" placeholder="Name">
+                        <input type="text" id="c-company" class="form-input" placeholder="Company">
+                        <input type="text" id="c-phone" class="form-input" placeholder="Phone">
+                        <input type="text" id="c-email" class="form-input" placeholder="Email">
+                        <input type="text" id="c-summary" class="form-input" placeholder="Context summary">
+                        <button class="btn-primary" style="padding:0 20px;" onclick="addContact()">Add Contact</button>
+                    </div>
+
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -550,6 +649,18 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             <div id="tab-tasks" class="tab-panel">
                 <div class="table-wrapper">
                     <h3 style="font-size: 1.1rem; margin-bottom: 16px;">Tasks Board</h3>
+                    
+                    <div style="display:grid; grid-template-columns: 2fr 3fr 1fr auto; gap:10px; margin-bottom:16px;">
+                        <input type="text" id="t-title" class="form-input" placeholder="Task Title">
+                        <input type="text" id="t-desc" class="form-input" placeholder="Description">
+                        <select id="t-prio" class="form-input">
+                            <option value="1">Priority 1 (High)</option>
+                            <option value="2">Priority 2</option>
+                            <option value="3" selected>Priority 3 (Normal)</option>
+                        </select>
+                        <button class="btn-primary" style="padding:0 20px;" onclick="addTask()">Create Task</button>
+                    </div>
+
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -570,7 +681,14 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             <!-- MEMORY TAB -->
             <div id="tab-memory" class="tab-panel">
                 <div class="table-wrapper">
-                    <h3 style="font-size: 1.1rem; margin-bottom: 16px;">System Memory</h3>
+                    <h3 style="font-size: 1.1rem; margin-bottom: 16px;">System Memory & Facts</h3>
+                    
+                    <div style="display:grid; grid-template-columns: 1fr 2fr auto; gap:10px; margin-bottom:16px;">
+                        <input type="text" id="m-key" class="form-input" placeholder="Fact Key e.g. favorite_food">
+                        <input type="text" id="m-val" class="form-input" placeholder="Fact Value e.g. Pizza">
+                        <button class="btn-primary" style="padding:0 20px;" onclick="addMemory()">Store Memory</button>
+                    </div>
+
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -636,6 +754,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             document.getElementById('tab-' + name).classList.add('active');
             document.getElementById('tab-header-title').innerText = el.innerText.trim();
             
+            if(name === 'userbot') loadUserbotStatus();
             if(name === 'finance') loadFinance();
             if(name === 'contacts') loadContacts();
             if(name === 'tasks') loadTasks();
@@ -650,6 +769,35 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 document.getElementById('stat-ram').innerText = d.ram + '%';
                 document.getElementById('stat-txns').innerText = d.transactions_count;
                 document.getElementById('stat-tasks').innerText = d.pending_tasks;
+            });
+        }
+
+        function loadUserbotStatus() {
+            fetch('/api/userbot/status')
+            .then(r => r.json())
+            .then(d => {
+                const el = document.getElementById('ub-status-text');
+                el.innerText = d.is_running ? 'RUNNING' : 'STOPPED';
+                el.style.color = d.is_running ? 'var(--accent-green)' : 'var(--accent-red)';
+                document.getElementById('ub-session-text').innerText = d.has_session_string ? 'Yes' : 'No';
+            });
+        }
+
+        function sendUserbotMsg() {
+            const rec = document.getElementById('ub-recipient').value.trim();
+            const msg = document.getElementById('ub-msg').value.trim();
+            if(!rec || !msg) return;
+            
+            document.getElementById('ub-send-res').innerText = 'Sending message...';
+            
+            fetch('/api/userbot/send', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({recipient: rec, message: msg})
+            })
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById('ub-send-res').innerText = d.result || d.error;
             });
         }
 
@@ -676,6 +824,57 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             });
         }
 
+        function submitFinanceLog() {
+            const amt = parseFloat(document.getElementById('fin-add-amount').value);
+            const v = document.getElementById('fin-add-vendor').value.trim();
+            const c = document.getElementById('fin-add-cat').value.trim();
+            const t = document.getElementById('fin-add-type').value;
+            if(!amt || !v) return;
+            
+            fetch('/api/finance/add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({amount: amt, vendor: v, category: c || 'General', transaction_type: t})
+            }).then(() => loadFinance());
+        }
+
+        function testSmsParse() {
+            const txt = document.getElementById('sms-raw-input').value.trim();
+            if(!txt) return;
+            
+            fetch('/api/finance/parse_sms', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({sms_text: txt})
+            })
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById('sms-parse-out').innerText = JSON.stringify(d.result, null, 2);
+                loadFinance();
+            });
+        }
+
+        function downloadMediaStream() {
+            const url = document.getElementById('media-dl-url').value.trim();
+            if(!url) return;
+            
+            document.getElementById('media-dl-res').innerText = 'Downloading media stream...';
+            
+            fetch('/api/media/download', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({url: url})
+            })
+            .then(r => r.json())
+            .then(d => {
+                if(d.success) {
+                    document.getElementById('media-dl-res').innerText = `Downloaded: ${d.title} (${d.artist})`;
+                } else {
+                    document.getElementById('media-dl-res').innerText = `Error: ${d.filepath}`;
+                }
+            });
+        }
+
         function loadContacts() {
             fetch('/api/contacts')
             .then(r => r.json())
@@ -694,6 +893,21 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             });
         }
 
+        function addContact() {
+            const n = document.getElementById('c-name').value.trim();
+            const comp = document.getElementById('c-company').value.trim();
+            const p = document.getElementById('c-phone').value.trim();
+            const e = document.getElementById('c-email').value.trim();
+            const sum = document.getElementById('c-summary').value.trim();
+            if(!n) return;
+            
+            fetch('/api/contacts/add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name: n, company: comp, phone: p, email: e, context_summary: sum})
+            }).then(() => loadContacts());
+        }
+
         function loadTasks() {
             fetch('/api/tasks')
             .then(r => r.json())
@@ -710,6 +924,19 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 });
                 document.getElementById('tasks-table-body').innerHTML = html || '<tr><td colspan="5">No tasks found</td></tr>';
             });
+        }
+
+        function addTask() {
+            const title = document.getElementById('t-title').value.trim();
+            const desc = document.getElementById('t-desc').value.trim();
+            const prio = parseInt(document.getElementById('t-prio').value);
+            if(!title) return;
+            
+            fetch('/api/tasks/add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({title: title, description: desc, priority: prio})
+            }).then(() => loadTasks());
         }
 
         function toggleTask(id) {
@@ -734,6 +961,18 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 });
                 document.getElementById('memory-table-body').innerHTML = html || '<tr><td colspan="3">No memories found</td></tr>';
             });
+        }
+
+        function addMemory() {
+            const k = document.getElementById('m-key').value.trim();
+            const v = document.getElementById('m-val').value.trim();
+            if(!k || !v) return;
+            
+            fetch('/api/memories/add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({fact_key: k, fact_value: v})
+            }).then(() => loadMemory());
         }
 
         function sendAgentMessage() {
