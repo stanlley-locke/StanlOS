@@ -68,6 +68,15 @@ app.include_router(webhooks_telegram.router, tags=["Telegram"])
 app.include_router(webhooks_sms.router, tags=["SMS Webhooks"])
 app.include_router(webhooks_github.router, tags=["GitHub Webhooks"])
 
+@app.get("/", tags=["System"])
+async def root():
+    return {
+        "status": "online",
+        "system": "StanlOS V2",
+        "bot": "@stanlosbot",
+        "docs": "/docs"
+    }
+
 @app.get("/health", tags=["System"])
 async def health_check():
     return {"status": "alive", "system": "StanlOS"}

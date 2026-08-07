@@ -17,6 +17,11 @@ class UserbotService:
             logger.warning("Userbot not started: API_ID or API_HASH missing.")
             return
 
+        import os
+        if not settings.PYROGRAM_SESSION_STRING and not os.path.exists("my_account.session"):
+            logger.warning("Userbot not started: 'my_account.session' file missing and PYROGRAM_SESSION_STRING not set. Set PYROGRAM_SESSION_STRING on Render to enable MTProto Userbot features.")
+            return
+
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
