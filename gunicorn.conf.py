@@ -1,12 +1,27 @@
 import os
+import asyncio
+
+# Ensure MainThread has a valid event loop during configuration load
+try:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+except Exception:
+    pass
+
+def post_fork(server, worker):
+    """Ensure each worker process has a dedicated event loop before app initialization."""
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    except Exception:
+        pass
 
 # Server socket configuration
 bind = f"0.0.0.0:{os.environ.get('PORT', '8000')}"
 backlog = 2048
 
 # Worker processes
-# Render recommends 2 workers per instance for optimal memory and async performance
-workers = int(os.environ.get("WEB_CONCURRENCY", "2"))
+workers = int(os.environ.get("WEB_CONCURRENCY", "1"))
 worker_class = "uvicorn.workers.UvicornWorker"
 worker_connections = 1000
 timeout = 120
