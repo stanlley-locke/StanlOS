@@ -23,20 +23,30 @@ class IncomeState(StatesGroup):
 @router.callback_query(F.data == "menu:finance")
 @router.message(Command("finance"))
 async def cb_finance_menu(event: Message | CallbackQuery):
+    user_id = event.from_user.id
+    
+    inc_res = await db.execute("SELECT SUM(amount) FROM transactions WHERE user_id = ? AND transaction_type = 'income'", (user_id,), fetch=True)
+    exp_res = await db.execute("SELECT SUM(amount) FROM transactions WHERE user_id = ? AND transaction_type = 'expense'", (user_id,), fetch=True)
+    
+    total_inc = inc_res[0][0] or 0.0 if inc_res else 0.0
+    total_exp = exp_res[0][0] or 0.0 if exp_res else 0.0
+    net_bal = total_inc - total_exp
+    
     text = (
-        f"<b>{SYMBOLS['finance']} FINANCIAL CONTROL CENTER</b>\n\n"
-        f"Manage your personal accounting and expenditure tracking:\n\n"
-        f"{SYMBOLS['bullet']} /expense &lt;details&gt; - Log expense manually\n"
-        f"{SYMBOLS['bullet']} /income &lt;details&gt; - Log income entry\n"
-        f"{SYMBOLS['bullet']} /summary - View category breakdown report\n"
-        f"{SYMBOLS['bullet']} /history - Browse transaction history\n"
-        f"{SYMBOLS['bullet']} /reset_transactions - Clear all transactions\n\n"
-        f"<i>Automated Webhook: M-PESA, KCB, Equity, and ZIIDI SMS are parsed and logged automatically.</i>"
+        f"<b>Financial Control & Accounting</b>\n\n"
+        f"<b>Net Balance:</b> Ksh {net_bal:,.2f}\n"
+        f"<b>Total Income:</b> +Ksh {total_inc:,.2f}\n"
+        f"<b>Total Expense:</b> -Ksh {total_exp:,.2f}\n\n"
+        f"• <code>/expense &lt;amount vendor&gt;</code> - Log expense\n"
+        f"• <code>/income &lt;amount source&gt;</code> - Log income\n"
+        f"• <code>/summary</code> - Category breakdown report\n"
+        f"• <code>/history</code> - Transaction history & delete"
     )
     buttons = [
-        [("📉 Log Expense", "fin:action_expense"), ("📈 Log Income", "fin:action_income")],
-        [("📊 Financial Summary", "fin:summary"), ("📜 History", "fin:history")],
-        [("🔄 Reset All Data", "fin:reset_confirm")]
+        [("Log Expense", "fin:action_expense"), ("Log Income", "fin:action_income")],
+        [("Category Breakdown", "fin:summary"), ("Spending Trends", "fin:trends")],
+        [("Transaction History", "fin:history"), ("Top Vendors", "fin:vendors")],
+        [("Reset Financial Data", "fin:reset_confirm")]
     ]
     kb = build_sub_menu_kb(buttons)
     if isinstance(event, Message):
@@ -260,6 +270,53 @@ async def cmd_summary(event: Message | CallbackQuery):
         await event.answer(text, reply_markup=kb)
     else:
         await event.message.edit_text(text, reply_markup=kb)
+
+@router.callback_query(F.data == "fin:trends")
+@router.message(Command("trends"))
+async def cb_trends(event: Message | CallbackQuery):
+    user_id = event.from_user.id
+    daily_rows = await db.execute(
+        "SELECT DATE(created_at) as tdate, transaction_type, SUM(amount) FROM transactions WHERE user_id = ? GROUP BY DATE(created_at), transaction_type ORDER BY tdate DESC LIMIT 10",
+        (user_id,), fetch=True
+    )
+    
+    text = "<b>Daily Spending Trends</b>\n\n"
+    if not daily_rows:
+        text += "No trend data recorded yet."
+    else:
+        daily_map = {}
+        for r in daily_rows:
+            d_str, ttype, amt = r[0], r[1], r[2] or 0.0
+            if d_str not in daily_map:
+                daily_map[d_str] = {"income": 0.0, "expense": 0.0}
+            daily_map[d_str][ttype] = amt
+            
+        for date_key, val in daily_map.items():
+            text += f"• <b>{date_key}:</b> -Ksh {val['expense']:,.2f} | +Ksh {val['income']:,.2f}\n"
+            
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Finance", callback_data="menu:finance")]])
+    if isinstance(event, Message):
+        await event.answer(text, reply_markup=kb)
+    else:
+        await event.message.edit_text(text, reply_markup=kb)
+
+@router.callback_query(F.data == "fin:vendors")
+async def cb_vendors(cb: CallbackQuery):
+    user_id = cb.from_user.id
+    vendor_rows = await db.execute(
+        "SELECT vendor, SUM(amount), COUNT(*) FROM transactions WHERE user_id = ? AND transaction_type = 'expense' GROUP BY vendor ORDER BY SUM(amount) DESC LIMIT 5",
+        (user_id,), fetch=True
+    )
+    
+    text = "<b>Top Expense Vendors & Reasons</b>\n\n"
+    if not vendor_rows:
+        text += "No vendor data recorded yet."
+    else:
+        for idx, (v, amt, cnt) in enumerate(vendor_rows, 1):
+            text += f"{idx}. <b>{safe_html(v or 'General')}</b>: Ksh {amt:,.2f} ({cnt} txns)\n"
+            
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Finance", callback_data="menu:finance")]])
+    await cb.message.edit_text(text, reply_markup=kb)
 
 @router.callback_query(F.data == "fin:history")
 @router.message(Command("history", "txns"))
