@@ -143,8 +143,21 @@ class DatabaseManager:
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(user_id) REFERENCES users(tg_id)
             )
+            """,
+            # Connected Apps (Universal App Framework)
             """
-            # Omitting triggers for brevity, can add later if needed for real-time FTS sync
+            CREATE TABLE IF NOT EXISTS user_apps (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                app_id TEXT NOT NULL,
+                auth_type TEXT,
+                auth_token TEXT,
+                status TEXT DEFAULT 'active',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(tg_id),
+                UNIQUE(user_id, app_id)
+            )
+            """
         ]
 
         def _sync_init():
