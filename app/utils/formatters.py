@@ -98,30 +98,30 @@ def format_dashboard(data: dict) -> str:
 def build_main_menu_kb(is_admin: bool = True) -> InlineKeyboardMarkup:
     rows = [
         [
-            InlineKeyboardButton(text="Academic & Tasks", callback_data="menu:academic"),
-            InlineKeyboardButton(text="Finance & MPESA", callback_data="menu:finance")
+            InlineKeyboardButton(text="Workload", callback_data="menu:workload"),
+            InlineKeyboardButton(text="Accounting", callback_data="menu:finance")
         ],
         [
-            InlineKeyboardButton(text="Knowledge RAG", callback_data="menu:knowledge"),
-            InlineKeyboardButton(text="Network CRM", callback_data="menu:crm")
+            InlineKeyboardButton(text="Academic", callback_data="menu:academic"),
+            InlineKeyboardButton(text="Knowledge RAG", callback_data="menu:knowledge")
         ],
         [
-            InlineKeyboardButton(text="Media Extractor", callback_data="menu:media"),
-            InlineKeyboardButton(text="Tools & Utilities", callback_data="menu:tools")
+            InlineKeyboardButton(text="Contacts", callback_data="menu:crm"),
+            InlineKeyboardButton(text="Media", callback_data="menu:media")
         ],
         [
-            InlineKeyboardButton(text="Weather Forecast", callback_data="menu:weather"),
-            InlineKeyboardButton(text="Math Calculator", callback_data="menu:calc")
+            InlineKeyboardButton(text="Tools", callback_data="menu:tools"),
+            InlineKeyboardButton(text="Forecasts", callback_data="menu:forecasts")
         ],
         [
-            InlineKeyboardButton(text="Gamification", callback_data="menu:gamification"),
-            InlineKeyboardButton(text="Autonomous AI Chat", callback_data="menu:ai_chat")
+            InlineKeyboardButton(text="Chat", callback_data="menu:ai_chat"),
+            InlineKeyboardButton(text="Games", callback_data="menu:gamification")
         ]
     ]
     
     admin_row = []
     if is_admin:
-        admin_row.append(InlineKeyboardButton(text="DevOps", callback_data="menu:devops"))
+        admin_row.append(InlineKeyboardButton(text="System Admin", callback_data="menu:devops"))
     admin_row.append(InlineKeyboardButton(text="Settings", callback_data="menu:settings"))
     admin_row.append(InlineKeyboardButton(text="Help Guide", callback_data="menu:help"))
     rows.append(admin_row)

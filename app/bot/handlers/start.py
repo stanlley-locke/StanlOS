@@ -107,19 +107,38 @@ async def cmd_help(event: Message | CallbackQuery):
     else:
         await event.message.edit_text(text, reply_markup=kb)
 
-@router.callback_query(F.data == "menu:tools")
-async def cb_tools(cb: CallbackQuery):
+@router.callback_query(F.data == "menu:workload")
+async def cb_workload(cb: CallbackQuery):
+    user_id = cb.from_user.id
+    from app.agent.tools import list_tasks
+    tasks_text = await list_tasks(user_id)
     text = (
-        f"<b>Tools & Utilities Hub</b>\n\n"
-        f"• <b>FX Converter:</b> <code>/convert 100 USD KES</code>\n"
-        f"• <b>Crypto Market:</b> <code>/crypto BTC</code> or <code>/crypto ETH</code>\n"
-        f"• <b>AI Translator:</b> <code>/translate Swahili Good morning</code>\n"
-        f"• <b>Wikipedia Lookup:</b> <code>/wiki Quantum Computing</code>\n"
-        f"• <b>Math Calculator:</b> <code>/calc 1500 * 0.16</code>"
+        f"<b>Workload & Task Management</b>\n\n"
+        f"<b>Current Tasks:</b>\n{tasks_text}\n\n"
+        f"• <code>/assign &lt;task title&gt;</code> - Create new task\n"
+        f"• <code>/clear_tasks</code> - Delete all tasks"
     )
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]
-    ])
+    buttons = [
+        [("View Pending Tasks", "academic:list"), ("Add New Task", "academic:add")],
+        [("Clear All Tasks", "academic:clear")]
+    ]
+    kb = build_sub_menu_kb(buttons)
+    await cb.message.edit_text(text, reply_markup=kb)
+
+@router.callback_query(F.data == "menu:forecasts")
+async def cb_forecasts(cb: CallbackQuery):
+    text = (
+        f"<b>Forecasts & Live Information</b>\n\n"
+        f"• <b>Weather Forecast:</b> <code>/weather Nairobi</code>\n"
+        f"• <b>Crypto Market Prices:</b> <code>/crypto BTC</code>\n"
+        f"• <b>Currency Exchange:</b> <code>/convert 100 USD KES</code>\n"
+        f"• <b>Wikipedia Lookup:</b> <code>/wiki Quantum Computing</code>"
+    )
+    buttons = [
+        [("Check Weather", "menu:weather"), ("Check Crypto", "menu:crypto_quick")],
+        [("Convert Currency", "menu:convert_quick"), ("Wikipedia Search", "menu:wiki_quick")]
+    ]
+    kb = build_sub_menu_kb(buttons)
     await cb.message.edit_text(text, reply_markup=kb)
 
 @router.message(Command("weather"))
