@@ -94,11 +94,12 @@ class MediaToolsService:
             logger.error(f"Error downloading media audio from {url}: {e}")
             return None, str(e), "Error"
 
-    async def search_youtube_songs(self, query: str, max_results: int = 5) -> list[dict]:
+    async def search_youtube_songs(self, query: str, max_results: int = 5, limit: int = 5) -> list[dict]:
         """
-        Searches YouTube for music tracks using ytsearch5:<query>.
+        Searches YouTube for music tracks/songs using ytsearch5:<query>.
         Returns list of dicts: [{'title': ..., 'url': ..., 'duration': ..., 'uploader': ..., 'id': ...}]
         """
+        count = max_results if max_results != 5 else limit
         ydl_opts = {
             'default_search': 'ytsearch',
             'nocheckcertificate': True,
@@ -110,7 +111,7 @@ class MediaToolsService:
         
         def _search():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                res = ydl.extract_info(f"ytsearch{max_results}:{query}", download=False)
+                res = ydl.extract_info(f"ytsearch{count}:{query}", download=False)
                 if not res or 'entries' not in res:
                     return []
                 results = []

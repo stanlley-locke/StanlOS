@@ -277,7 +277,7 @@ async def agent_chat(req: AgentChatRequest):
 
 @router.post("/media/search")
 async def media_search(req: MediaSearchRequest):
-    tracks = await media_tools.search_youtube_songs(req.query, limit=5)
+    tracks = await media_tools.search_youtube_songs(req.query, max_results=5)
     return {"success": True, "results": tracks}
 
 @router.post("/media/download")
