@@ -310,3 +310,42 @@ async def academic_ask(req: DocumentAskRequest):
     admin_id = settings.ADMIN_IDS[0] if settings.ADMIN_IDS else 0
     docs = await kb_service.search_similar(admin_id, req.query, top_k=3)
     return {"success": True, "documents": docs}
+
+class CurrencyConvertRequest(BaseModel):
+    amount: float
+    from_currency: str = "USD"
+    to_currency: str = "KES"
+
+class CryptoPriceRequest(BaseModel):
+    symbol: str = "BTC"
+
+class TranslateRequest(BaseModel):
+    text: str
+    target_language: str = "Swahili"
+
+class WikiRequest(BaseModel):
+    query: str
+
+@router.post("/tools/convert_currency")
+async def convert_currency_api(req: CurrencyConvertRequest):
+    from app.agent.tools import currency_converter
+    result = await currency_converter(req.amount, req.from_currency, req.to_currency)
+    return {"success": True, "result": result}
+
+@router.post("/tools/crypto_price")
+async def crypto_price_api(req: CryptoPriceRequest):
+    from app.agent.tools import crypto_tracker
+    result = await crypto_tracker(req.symbol)
+    return {"success": True, "result": result}
+
+@router.post("/tools/translate")
+async def translate_api(req: TranslateRequest):
+    from app.agent.tools import translate_text
+    result = await translate_text(req.text, req.target_language)
+    return {"success": True, "result": result}
+
+@router.post("/tools/wiki")
+async def wiki_api(req: WikiRequest):
+    from app.agent.tools import wiki_search
+    result = await wiki_search(req.query)
+    return {"success": True, "result": result}

@@ -483,6 +483,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 <li class="nav-item" onclick="switchTab('contacts', this)"><i class="fa-solid fa-users"></i> CRM Contacts</li>
                 <li class="nav-item" onclick="switchTab('tasks', this)"><i class="fa-solid fa-check-square"></i> Tasks Board</li>
                 <li class="nav-item" onclick="switchTab('memory', this)"><i class="fa-solid fa-database"></i> Memory & RAG</li>
+                <li class="nav-item" onclick="switchTab('tools', this)"><i class="fa-solid fa-wrench"></i> Tools & Utilities</li>
                 <li class="nav-item" onclick="switchTab('settings', this)"><i class="fa-solid fa-sliders"></i> System Config</li>
             </ul>
 
@@ -761,6 +762,82 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                             <tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Loading memories...</td></tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- TOOLS TAB -->
+            <div id="tab-tools" class="tab-panel">
+                <div class="grid-2">
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 12px;">Currency & FX Converter</h3>
+                        <div class="form-group">
+                            <label>Amount</label>
+                            <input type="number" id="fx-amt" class="form-input" value="100">
+                        </div>
+                        <div class="form-grid-inline">
+                            <div>
+                                <label style="font-size:0.7rem; color:var(--text-muted);">From</label>
+                                <select id="fx-from" class="form-input">
+                                    <option value="USD" selected>USD</option>
+                                    <option value="KES">KES</option>
+                                    <option value="EUR">EUR</option>
+                                    <option value="GBP">GBP</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.7rem; color:var(--text-muted);">To</label>
+                                <select id="fx-to" class="form-input">
+                                    <option value="KES" selected>KES</option>
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                    <option value="TZS">TZS</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn-primary" onclick="convertFx()">Convert FX</button>
+                        <div id="fx-res" style="margin-top:12px; font-family:'Fira Code', monospace; font-size:0.85rem; color:var(--accent-green);"></div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 12px;">Crypto Market Lookup</h3>
+                        <div class="form-group">
+                            <label>Symbol</label>
+                            <select id="crypto-sym" class="form-input">
+                                <option value="BTC" selected>Bitcoin (BTC)</option>
+                                <option value="ETH">Ethereum (ETH)</option>
+                                <option value="SOL">Solana (SOL)</option>
+                                <option value="USDT">Tether (USDT)</option>
+                            </select>
+                        </div>
+                        <button class="btn-primary" onclick="fetchCryptoPrice()">Check Price</button>
+                        <div id="crypto-res" style="margin-top:12px; font-family:'Fira Code', monospace; font-size:0.85rem; color:var(--accent-blue);"></div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 12px;">AI Text Translator</h3>
+                        <div class="form-group">
+                            <label>Text to Translate</label>
+                            <textarea id="trans-text" class="form-input" rows="3" placeholder="Hello, welcome to StanlOS..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Target Language</label>
+                            <input type="text" id="trans-lang" class="form-input" value="Swahili">
+                        </div>
+                        <button class="btn-primary" onclick="translateAiText()">Translate</button>
+                        <div id="trans-res" style="margin-top:12px; font-size:0.9rem; background:var(--bg-black); padding:12px; border:1px solid var(--border);"></div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 12px;">Wikipedia Summary Search</h3>
+                        <div class="form-group">
+                            <label>Concept / Entity</label>
+                            <input type="text" id="wiki-query" class="form-input" placeholder="Artificial Intelligence">
+                        </div>
+                        <button class="btn-primary" onclick="searchWiki()">Lookup Wikipedia</button>
+                        <div id="wiki-res" style="margin-top:12px; font-size:0.85rem; color:var(--text-muted);"></div>
+                    </div>
                 </div>
             </div>
 
@@ -1098,6 +1175,57 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 });
                 res.innerHTML = html || 'No tracks found.';
             });
+        }
+
+        function convertFx() {
+            const amt = parseFloat(document.getElementById('fx-amt').value);
+            const fc = document.getElementById('fx-from').value;
+            const tc = document.getElementById('fx-to').value;
+            fetch('/api/tools/convert_currency', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({amount: amt, from_currency: fc, to_currency: tc})
+            })
+            .then(r => r.json())
+            .then(d => { document.getElementById('fx-res').innerText = d.result; });
+        }
+
+        function fetchCryptoPrice() {
+            const sym = document.getElementById('crypto-sym').value;
+            fetch('/api/tools/crypto_price', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({symbol: sym})
+            })
+            .then(r => r.json())
+            .then(d => { document.getElementById('crypto-res').innerText = d.result; });
+        }
+
+        function translateAiText() {
+            const txt = document.getElementById('trans-text').value.trim();
+            const lang = document.getElementById('trans-lang').value.trim();
+            if(!txt) return;
+            document.getElementById('trans-res').innerText = 'Translating...';
+            fetch('/api/tools/translate', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({text: txt, target_language: lang})
+            })
+            .then(r => r.json())
+            .then(d => { document.getElementById('trans-res').innerText = d.result; });
+        }
+
+        function searchWiki() {
+            const q = document.getElementById('wiki-query').value.trim();
+            if(!q) return;
+            document.getElementById('wiki-res').innerText = 'Searching Wikipedia...';
+            fetch('/api/tools/wiki', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({query: q})
+            })
+            .then(r => r.json())
+            .then(d => { document.getElementById('wiki-res').innerText = d.result; });
         }
 
         // Auto check login session
