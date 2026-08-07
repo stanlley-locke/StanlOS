@@ -197,6 +197,15 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             transition: all 0.15s ease;
         }
 
+        .nav-section-title {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-subtle);
+            padding: 16px 24px 6px 24px;
+        }
+
         .nav-item:hover {
             color: var(--text-main);
             background: #1A202C;
@@ -477,15 +486,22 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             </div>
             
             <ul class="nav-menu">
+                <div class="nav-section-title">Financial & Analytics</div>
                 <li class="nav-item active" onclick="switchTab('finance', this)"><i class="fa-solid fa-credit-card"></i> Finance & MPESA</li>
-                <li class="nav-item" onclick="switchTab('overview', this)"><i class="fa-solid fa-chart-line"></i> Overview</li>
+                <li class="nav-item" onclick="switchTab('overview', this)"><i class="fa-solid fa-chart-line"></i> System Overview</li>
+
+                <div class="nav-section-title">Intelligence & AI</div>
                 <li class="nav-item" onclick="switchTab('agent', this)"><i class="fa-solid fa-terminal"></i> AI Agent Chat</li>
-                <li class="nav-item" onclick="switchTab('userbot', this)"><i class="fa-solid fa-paper-plane"></i> Userbot Controller</li>
-                <li class="nav-item" onclick="switchTab('media', this)"><i class="fa-solid fa-download"></i> Media & TikTok Hub</li>
-                <li class="nav-item" onclick="switchTab('contacts', this)"><i class="fa-solid fa-users"></i> CRM Contacts</li>
-                <li class="nav-item" onclick="switchTab('tasks', this)"><i class="fa-solid fa-check-square"></i> Tasks Board</li>
                 <li class="nav-item" onclick="switchTab('memory', this)"><i class="fa-solid fa-database"></i> Memory & RAG</li>
+                <li class="nav-item" onclick="switchTab('contacts', this)"><i class="fa-solid fa-users"></i> CRM Contacts</li>
+                <li class="nav-item" onclick="switchTab('userbot', this)"><i class="fa-solid fa-paper-plane"></i> Userbot Controller</li>
+
+                <div class="nav-section-title">Utilities & Workload</div>
+                <li class="nav-item" onclick="switchTab('media', this)"><i class="fa-solid fa-download"></i> Media & TikTok Hub</li>
                 <li class="nav-item" onclick="switchTab('tools', this)"><i class="fa-solid fa-wrench"></i> Tools & Utilities</li>
+                <li class="nav-item" onclick="switchTab('tasks', this)"><i class="fa-solid fa-check-square"></i> Tasks Board</li>
+
+                <div class="nav-section-title">System Admin</div>
                 <li class="nav-item" onclick="switchTab('settings', this)"><i class="fa-solid fa-sliders"></i> System Config</li>
             </ul>
 
