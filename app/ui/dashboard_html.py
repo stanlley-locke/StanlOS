@@ -3,27 +3,29 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StanlOS Console</title>
+    <title>StanlOS Financial & Control Console</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bg-black: #09090B;
-            --bg-panel: #18181B;
-            --bg-input: #09090B;
-            --border: #27272A;
-            --border-hover: #3F3F46;
+            --bg-dark: #0B0E14;
+            --bg-card: #151921;
+            --bg-input: #0E121A;
+            --border: #1E2330;
+            --border-hover: #2E3547;
             
-            --text-white: #FAFAFA;
-            --text-muted: #A1A1AA;
-            --text-subtle: #71717A;
+            --text-main: #F3F4F6;
+            --text-muted: #9CA3AF;
+            --text-subtle: #6B7280;
             
-            --accent-blue: #2563EB;
-            --accent-blue-hover: #1D4ED8;
-            --accent-green: #16A34A;
-            --accent-red: #DC2626;
+            --primary-blue: #2563EB;
+            --primary-blue-hover: #1D4ED8;
+            --accent-green: #10B981;
+            --accent-red: #EF4444;
+            --accent-amber: #F59E0B;
         }
 
         * {
@@ -31,14 +33,12 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             padding: 0;
             box-sizing: border-box;
             font-family: 'Inter', sans-serif;
-            border-radius: 0 !important; /* Square corners */
-            box-shadow: none !important;  /* No glowy elements */
-            text-shadow: none !important;
+            border-radius: 4px; /* Professional subtle rounded borders */
         }
 
         body {
-            background-color: var(--bg-black);
-            color: var(--text-white);
+            background-color: var(--bg-dark);
+            color: var(--text-main);
             min-height: 100vh;
             overflow-x: hidden;
         }
@@ -47,7 +47,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         #login-modal {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background: #000000;
+            background: #06080C;
             z-index: 9999;
             display: flex;
             align-items: center;
@@ -56,17 +56,17 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         }
 
         .login-card {
-            background: var(--bg-panel);
+            background: var(--bg-card);
             border: 1px solid var(--border);
-            padding: 36px 32px;
+            padding: 40px;
             width: 100%;
             max-width: 400px;
         }
 
         .login-card h2 {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 700;
-            color: var(--text-white);
+            color: var(--text-main);
             margin-bottom: 6px;
         }
 
@@ -95,42 +95,42 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             background: var(--bg-input);
             border: 1px solid var(--border);
             padding: 12px 14px;
-            color: var(--text-white);
+            color: var(--text-main);
             font-size: 0.9rem;
             outline: none;
-            min-height: 44px;
+            min-height: 42px;
             transition: border-color 0.15s ease;
         }
 
         .form-input:focus, select:focus, textarea:focus {
-            border-color: var(--accent-blue);
+            border-color: var(--primary-blue);
         }
 
         .btn-primary {
             width: 100%;
-            background: var(--accent-blue);
-            border: 1px solid var(--accent-blue);
+            background: var(--primary-blue);
+            border: 1px solid var(--primary-blue);
             padding: 12px;
             color: #FFFFFF;
             font-weight: 600;
             font-size: 0.9rem;
-            min-height: 44px;
+            min-height: 42px;
             cursor: pointer;
             transition: background 0.15s ease;
         }
 
         .btn-primary:hover {
-            background: var(--accent-blue-hover);
+            background: var(--primary-blue-hover);
         }
 
         .btn-secondary {
-            background: var(--bg-panel);
+            background: var(--bg-card);
             border: 1px solid var(--border);
-            color: var(--text-white);
+            color: var(--text-main);
             padding: 10px 16px;
             font-size: 0.85rem;
             font-weight: 500;
-            min-height: 44px;
+            min-height: 42px;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
@@ -140,6 +140,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
         .btn-secondary:hover {
             border-color: var(--border-hover);
+            background: #1A202C;
         }
 
         /* LAYOUT */
@@ -151,32 +152,29 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         /* SIDEBAR */
         .sidebar {
             width: 250px;
-            background: var(--bg-panel);
+            background: var(--bg-card);
             border-right: 1px solid var(--border);
             padding: 24px 0;
             display: flex;
             flex-direction: column;
-            transition: all 0.3s ease;
         }
 
         .brand-logo {
             padding: 0 24px;
             margin-bottom: 28px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
 
         .brand-title {
-            font-size: 1.2rem;
+            font-size: 1.25rem;
             font-weight: 700;
             letter-spacing: -0.3px;
         }
 
         .brand-sub {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             color: var(--text-subtle);
             font-family: 'Fira Code', monospace;
+            margin-top: 2px;
         }
 
         .nav-menu {
@@ -189,32 +187,32 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 14px 24px;
+            padding: 12px 24px;
             color: var(--text-muted);
             font-size: 0.88rem;
             font-weight: 500;
             cursor: pointer;
             border-left: 3px solid transparent;
-            min-height: 44px;
+            min-height: 42px;
             transition: all 0.15s ease;
         }
 
         .nav-item:hover {
-            color: var(--text-white);
-            background: #27272A;
+            color: var(--text-main);
+            background: #1A202C;
         }
 
         .nav-item.active {
-            color: var(--text-white);
-            background: #27272A;
-            border-left-color: var(--accent-blue);
+            color: var(--text-main);
+            background: #1A202C;
+            border-left-color: var(--primary-blue);
         }
 
         /* MAIN CONTENT */
         .main-content {
             flex: 1;
             padding: 32px;
-            background: var(--bg-black);
+            background: var(--bg-dark);
             overflow-y: auto;
         }
 
@@ -222,10 +220,9 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 24px;
+            padding-bottom: 20px;
             margin-bottom: 28px;
             border-bottom: 1px solid var(--border);
-            gap: 16px;
         }
 
         .mobile-header-bar {
@@ -233,38 +230,38 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             justify-content: space-between;
             align-items: center;
             padding: 16px 20px;
-            background: var(--bg-panel);
+            background: var(--bg-card);
             border-bottom: 1px solid var(--border);
         }
 
         .page-title h1 {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 700;
         }
 
         .status-badge {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            background: #09090B;
+            gap: 6px;
+            background: #061811;
             border: 1px solid var(--accent-green);
             color: var(--accent-green);
-            padding: 4px 12px;
+            padding: 4px 10px;
             font-size: 0.75rem;
             font-weight: 600;
             font-family: 'Fira Code', monospace;
         }
 
-        /* STATS GRID */
+        /* STATS CARDS */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
             margin-bottom: 28px;
         }
 
         .stat-card {
-            background: var(--bg-panel);
+            background: var(--bg-card);
             border: 1px solid var(--border);
             padding: 20px;
         }
@@ -278,9 +275,29 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         }
 
         .stat-value {
-            font-size: 1.8rem;
+            font-size: 1.7rem;
             font-weight: 700;
             font-family: 'Fira Code', monospace;
+        }
+
+        /* FINANCIAL DASHBOARD GRAPH CARDS */
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 1.05rem;
+            font-weight: 600;
         }
 
         /* TAB PANELS */
@@ -291,9 +308,9 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             display: block;
         }
 
-        /* CHAT MODULE */
+        /* CHAT CONTAINER */
         .chat-container {
-            background: var(--bg-panel);
+            background: var(--bg-card);
             border: 1px solid var(--border);
             height: 550px;
             display: flex;
@@ -307,7 +324,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             display: flex;
             flex-direction: column;
             gap: 14px;
-            background: var(--bg-black);
+            background: var(--bg-dark);
         }
 
         .msg-bubble {
@@ -320,38 +337,38 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
         .msg-user {
             align-self: flex-end;
-            background: var(--accent-blue);
-            border-color: var(--accent-blue);
+            background: var(--primary-blue);
+            border-color: var(--primary-blue);
             color: #FFFFFF;
         }
 
         .msg-bot {
             align-self: flex-start;
-            background: var(--bg-panel);
-            color: var(--text-white);
+            background: var(--bg-card);
+            color: var(--text-main);
         }
 
         .chat-input-area {
             display: flex;
             gap: 10px;
             padding: 16px;
-            background: var(--bg-panel);
+            background: var(--bg-card);
             border-top: 1px solid var(--border);
         }
 
-        /* DATA TABLES & FORMS */
+        /* TABLES & WRAPPERS */
         .table-wrapper {
-            background: var(--bg-panel);
+            background: var(--bg-card);
             border: 1px solid var(--border);
             padding: 20px;
             margin-bottom: 24px;
-            overflow-x: auto; /* Enable touch scrolling for tables on mobile */
+            overflow-x: auto;
         }
 
         .data-table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 500px; /* Ensures readable columns */
+            min-width: 500px;
         }
 
         .data-table th, .data-table td {
@@ -376,8 +393,21 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             font-family: 'Fira Code', monospace;
             border: 1px solid transparent;
         }
-        .tag-expense { border-color: var(--accent-red); color: var(--accent-red); }
-        .tag-income { border-color: var(--accent-green); color: var(--accent-green); }
+        .tag-expense { border-color: var(--accent-red); color: var(--accent-red); background: #1C0F13; }
+        .tag-income { border-color: var(--accent-green); color: var(--accent-green); background: #081C15; }
+
+        .progress-bar-bg {
+            background: var(--bg-dark);
+            height: 8px;
+            width: 100%;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .progress-bar-fill {
+            background: var(--primary-blue);
+            height: 100%;
+        }
 
         .grid-2 {
             display: grid;
@@ -394,44 +424,15 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
         .hidden { display: none !important; }
 
-        /* RESPONSIVE MOBILE BREAKPOINTS */
         @media (max-width: 768px) {
-            .app-container {
-                flex-direction: column;
-            }
-            .sidebar {
-                width: 100%;
-                border-right: none;
-                border-bottom: 1px solid var(--border);
-                padding: 12px 0;
-                display: none; /* Toggled by menu button */
-            }
-            .sidebar.mobile-open {
-                display: flex;
-            }
-            .mobile-header-bar {
-                display: flex;
-            }
-            .main-content {
-                padding: 16px;
-            }
-            .top-bar {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-            }
-            .grid-2 {
-                grid-template-columns: 1fr;
-            }
-            .stats-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-            .chat-container {
-                height: 450px;
-            }
-            .form-grid-inline {
-                grid-template-columns: 1fr;
-            }
+            .app-container { flex-direction: column; }
+            .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); padding: 12px 0; display: none; }
+            .sidebar.mobile-open { display: flex; }
+            .mobile-header-bar { display: flex; }
+            .main-content { padding: 16px; }
+            .top-bar { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .grid-2 { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
@@ -470,15 +471,16 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         
         <!-- SIDEBAR -->
         <aside class="sidebar" id="app-sidebar">
-            <div class="brand-logo" style="display:none;" id="sidebar-logo-mobile">
-                <div class="brand-title">Navigation</div>
+            <div class="brand-logo">
+                <div class="brand-title">StanlOS</div>
+                <div class="brand-sub">FINANCIAL & SYSTEM CONSOLE</div>
             </div>
             
             <ul class="nav-menu">
-                <li class="nav-item active" onclick="switchTab('overview', this)"><i class="fa-solid fa-chart-line"></i> Overview</li>
+                <li class="nav-item active" onclick="switchTab('finance', this)"><i class="fa-solid fa-credit-card"></i> Finance & MPESA</li>
+                <li class="nav-item" onclick="switchTab('overview', this)"><i class="fa-solid fa-chart-line"></i> Overview</li>
                 <li class="nav-item" onclick="switchTab('agent', this)"><i class="fa-solid fa-terminal"></i> AI Agent Chat</li>
                 <li class="nav-item" onclick="switchTab('userbot', this)"><i class="fa-solid fa-paper-plane"></i> Userbot Controller</li>
-                <li class="nav-item" onclick="switchTab('finance', this)"><i class="fa-solid fa-credit-card"></i> Finance & MPESA</li>
                 <li class="nav-item" onclick="switchTab('media', this)"><i class="fa-solid fa-download"></i> Media & TikTok Hub</li>
                 <li class="nav-item" onclick="switchTab('contacts', this)"><i class="fa-solid fa-users"></i> CRM Contacts</li>
                 <li class="nav-item" onclick="switchTab('tasks', this)"><i class="fa-solid fa-check-square"></i> Tasks Board</li>
@@ -498,16 +500,105 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             <!-- TOP BAR -->
             <div class="top-bar">
                 <div class="page-title">
-                    <h1 id="tab-header-title">Dashboard Overview</h1>
+                    <h1 id="tab-header-title">Financial Control & Analytics</h1>
                 </div>
-                <div style="display: flex; gap: 16px; align-items: center; width: 100%; justify-content: space-between;">
-                    <div class="status-badge" id="bot-main-badge">ONLINE</div>
+                <div style="display: flex; gap: 16px; align-items: center;">
+                    <div class="status-badge" id="bot-main-badge">SYSTEM ONLINE</div>
                     <div style="font-size: 0.85rem; color: var(--text-muted);" id="user-badge">Stanley (Admin)</div>
                 </div>
             </div>
 
+            <!-- FINANCE TAB (DEFAULT CORE FOCUS) -->
+            <div id="tab-finance" class="tab-panel active">
+                
+                <!-- FINANCIAL SUMMARY METRICS -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Net Balance</div>
+                        <div class="stat-value" id="fin-net">KES 0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Income</div>
+                        <div class="stat-value" style="color: var(--accent-green);" id="fin-income">KES 0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Expense</div>
+                        <div class="stat-value" style="color: var(--accent-red);" id="fin-expense">KES 0.00</div>
+                    </div>
+                </div>
+
+                <!-- SPENDING TRENDS & BREAKDOWN GRAPH -->
+                <div class="grid-2">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-title">Income vs Expense Trends</div>
+                            <span style="font-size:0.75rem; color:var(--text-muted); font-family:'Fira Code', monospace;">Real-time</span>
+                        </div>
+                        <div style="height: 240px; position: relative;">
+                            <canvas id="financeChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <div class="chart-header">
+                            <div class="chart-title">Category Spending Breakdown</div>
+                        </div>
+                        <div id="cat-breakdown-container" style="display:flex; flex-direction:column; gap:16px;">
+                            <div style="color:var(--text-muted); font-size:0.85rem;">Loading spending categories...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VENDOR REASONS & SMS TESTER -->
+                <div class="grid-2">
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.05rem; margin-bottom: 16px;">Top Expense Reasons & Vendors</h3>
+                        <div id="top-vendors-container" style="display:flex; flex-direction:column; gap:12px;">
+                            <div style="color:var(--text-muted); font-size:0.85rem;">Loading vendors...</div>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.05rem; margin-bottom: 12px;">Log Transaction / SMS Webhook Parser</h3>
+                        <div class="form-group">
+                            <label>Paste MPESA / Bank SMS</label>
+                            <textarea id="sms-raw-input" class="form-input" rows="3" placeholder="UH6H11X3U4 Confirmed. Ksh60.00 paid to THE SWEET SPOT HOTEL..."></textarea>
+                        </div>
+                        <button class="btn-primary" onclick="testSmsParse()">Process & Log SMS</button>
+                        <div id="sms-parse-out" style="font-size: 0.8rem; margin-top: 10px; font-family:'Fira Code', monospace; color: var(--primary-blue);"></div>
+                    </div>
+                </div>
+
+                <!-- TRANSACTION HISTORY SEARCH & TABLE -->
+                <div class="table-wrapper">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+                        <h3 style="font-size: 1.05rem;">Transaction Ledger</h3>
+                        <div style="display:flex; gap:10px; width:100%; max-width:320px;">
+                            <input type="text" id="txn-search" class="form-input" placeholder="Search transaction code or vendor..." onkeyup="filterTransactions()">
+                        </div>
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Transaction Code</th>
+                                <th>Amount</th>
+                                <th>Vendor / Recipient</th>
+                                <th>Category</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="txn-table-body">
+                            <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Loading transactions...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
             <!-- OVERVIEW TAB -->
-            <div id="tab-overview" class="tab-panel active">
+            <div id="tab-overview" class="tab-panel">
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-label">CPU Utilization</div>
@@ -528,8 +619,8 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 </div>
 
                 <div class="table-wrapper">
-                    <h3 style="font-size: 1.1rem; margin-bottom: 8px;">Quick Actions</h3>
-                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Execute autonomous agent commands directly.</p>
+                    <h3 style="font-size: 1.05rem; margin-bottom: 8px;">Quick Autonomous Actions</h3>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Execute ReAct AI Agent commands directly.</p>
                     <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                         <button class="btn-secondary" onclick="quickAction('Log KES 500 for coffee')">Log Expense</button>
                         <button class="btn-secondary" onclick="quickAction('What is my financial summary?')">Check Financial Summary</button>
@@ -554,16 +645,15 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             <div id="tab-userbot" class="tab-panel">
                 <div class="grid-2">
                     <div class="table-wrapper">
-                        <h3 style="font-size: 1.1rem; margin-bottom: 8px;">Userbot Status & Configuration</h3>
-                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">MTProto Pyrogram Userbot status on cloud server.</p>
-                        <div style="font-family:'Fira Code', monospace; font-size:0.85rem; display:flex; flex-direction:column; gap:8px;">
+                        <h3 style="font-size: 1.05rem; margin-bottom: 8px;">Userbot Status & Configuration</h3>
+                        <div style="font-family:'Fira Code', monospace; font-size:0.85rem; display:flex; flex-direction:column; gap:8px; margin-top:12px;">
                             <div>Status: <span id="ub-status-text" style="color:var(--accent-red);">Checking...</span></div>
                             <div>Session String Configured: <span id="ub-session-text">No</span></div>
                         </div>
                     </div>
 
                     <div class="table-wrapper">
-                        <h3 style="font-size: 1.1rem; margin-bottom: 12px;">Send Direct Message as Userbot</h3>
+                        <h3 style="font-size: 1.05rem; margin-bottom: 12px;">Send Direct Message as Userbot</h3>
                         <div class="form-group">
                             <label>Recipient (@username or Phone)</label>
                             <input type="text" id="ub-recipient" class="form-input" placeholder="@username">
@@ -578,84 +668,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- FINANCE TAB -->
-            <div id="tab-finance" class="tab-panel">
-                <div class="stats-grid" style="margin-bottom: 24px;">
-                    <div class="stat-card">
-                        <div class="stat-label">Total Income</div>
-                        <div class="stat-value" style="color: var(--accent-green);" id="fin-income">KES 0.00</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Total Expense</div>
-                        <div class="stat-value" style="color: var(--accent-red);" id="fin-expense">KES 0.00</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Net Balance</div>
-                        <div class="stat-value" id="fin-net">KES 0.00</div>
-                    </div>
-                </div>
-
-                <div class="grid-2">
-                    <div class="table-wrapper">
-                        <h3 style="font-size: 1.1rem; margin-bottom: 12px;">Log New Transaction</h3>
-                        <div class="form-group">
-                            <label>Amount (KES)</label>
-                            <input type="number" id="fin-add-amount" class="form-input" placeholder="500">
-                        </div>
-                        <div class="form-group">
-                            <label>Vendor / Recipient</label>
-                            <input type="text" id="fin-add-vendor" class="form-input" placeholder="Supermarket">
-                        </div>
-                        <div class="form-group">
-                            <label>Category</label>
-                            <input type="text" id="fin-add-cat" class="form-input" placeholder="Food">
-                        </div>
-                        <div class="form-group">
-                            <label>Type</label>
-                            <select id="fin-add-type" class="form-input">
-                                <option value="expense">Expense</option>
-                                <option value="income">Income</option>
-                            </select>
-                        </div>
-                        <button class="btn-primary" onclick="submitFinanceLog()">Log Transaction</button>
-                    </div>
-
-                    <div class="table-wrapper">
-                        <h3 style="font-size: 1.1rem; margin-bottom: 12px;">SMS Parser Simulator</h3>
-                        <div class="form-group">
-                            <label>Paste Raw MPESA / Bank SMS</label>
-                            <textarea id="sms-raw-input" class="form-input" rows="5" placeholder="SDF897123 Confirmed. Ksh500 sent to John Doe..."></textarea>
-                        </div>
-                        <button class="btn-secondary" style="width:100%; text-align:center;" onclick="testSmsParse()">Parse SMS</button>
-                        <div id="sms-parse-out" style="font-size: 0.8rem; margin-top: 10px; font-family:'Fira Code', monospace; color: var(--accent-blue);"></div>
-                    </div>
-                </div>
-
-                <div class="table-wrapper">
-                    <h3 style="font-size: 1.1rem; margin-bottom: 16px;">Transaction History</h3>
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Code</th>
-                                <th>Amount</th>
-                                <th>Vendor</th>
-                                <th>Category</th>
-                                <th>Type</th>
-                                <th>Date</th>
-                            </tr>
-                        </thead>
-                        <tbody id="txn-table-body">
-                            <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Loading transactions...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
             <!-- MEDIA TAB -->
             <div id="tab-media" class="tab-panel">
                 <div class="grid-2">
                     <div class="table-wrapper">
-                        <h3 style="font-size: 1.1rem; margin-bottom: 12px;">YouTube Song Search</h3>
+                        <h3 style="font-size: 1.05rem; margin-bottom: 12px;">YouTube Song Search</h3>
                         <div style="display: flex; gap: 10px;">
                             <input type="text" id="yt-search-query" class="form-input" placeholder="Song query e.g. Alan Walker Faded..." onkeydown="if(event.key==='Enter') searchYouTube()">
                             <button class="btn-primary" style="width: auto; padding: 0 20px;" onclick="searchYouTube()">Search</button>
@@ -664,7 +681,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                     </div>
 
                     <div class="table-wrapper">
-                        <h3 style="font-size: 1.1rem; margin-bottom: 12px;">TikTok, Instagram, Twitter Audio Extract</h3>
+                        <h3 style="font-size: 1.05rem; margin-bottom: 12px;">TikTok, Instagram, Twitter Audio Extract</h3>
                         <div class="form-group">
                             <label>Paste Media URL</label>
                             <input type="text" id="media-dl-url" class="form-input" placeholder="https://vm.tiktok.com/... or https://instagram.com/p/...">
@@ -678,7 +695,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             <!-- CRM TAB -->
             <div id="tab-contacts" class="tab-panel">
                 <div class="table-wrapper">
-                    <h3 style="font-size: 1.1rem; margin-bottom: 16px;">CRM Contacts</h3>
+                    <h3 style="font-size: 1.05rem; margin-bottom: 16px;">CRM Contacts</h3>
                     
                     <div class="form-grid-inline">
                         <input type="text" id="c-name" class="form-input" placeholder="Name">
@@ -709,7 +726,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             <!-- TASKS TAB -->
             <div id="tab-tasks" class="tab-panel">
                 <div class="table-wrapper">
-                    <h3 style="font-size: 1.1rem; margin-bottom: 16px;">Tasks Board</h3>
+                    <h3 style="font-size: 1.05rem; margin-bottom: 16px;">Tasks Board</h3>
                     
                     <div class="form-grid-inline">
                         <input type="text" id="t-title" class="form-input" placeholder="Task Title">
@@ -742,7 +759,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             <!-- MEMORY TAB -->
             <div id="tab-memory" class="tab-panel">
                 <div class="table-wrapper">
-                    <h3 style="font-size: 1.1rem; margin-bottom: 16px;">System Memory & Facts</h3>
+                    <h3 style="font-size: 1.05rem; margin-bottom: 16px;">System Memory & Facts</h3>
                     
                     <div class="form-grid-inline">
                         <input type="text" id="m-key" class="form-input" placeholder="Fact Key e.g. favorite_food">
@@ -769,7 +786,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             <div id="tab-tools" class="tab-panel">
                 <div class="grid-2">
                     <div class="table-wrapper">
-                        <h3 style="font-size: 1.1rem; margin-bottom: 12px;">Currency & FX Converter</h3>
+                        <h3 style="font-size: 1.05rem; margin-bottom: 12px;">Currency & FX Converter</h3>
                         <div class="form-group">
                             <label>Amount</label>
                             <input type="number" id="fx-amt" class="form-input" value="100">
@@ -799,7 +816,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                     </div>
 
                     <div class="table-wrapper">
-                        <h3 style="font-size: 1.1rem; margin-bottom: 12px;">Crypto Market Lookup</h3>
+                        <h3 style="font-size: 1.05rem; margin-bottom: 12px;">Crypto Market Lookup</h3>
                         <div class="form-group">
                             <label>Symbol</label>
                             <select id="crypto-sym" class="form-input">
@@ -810,13 +827,13 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                             </select>
                         </div>
                         <button class="btn-primary" onclick="fetchCryptoPrice()">Check Price</button>
-                        <div id="crypto-res" style="margin-top:12px; font-family:'Fira Code', monospace; font-size:0.85rem; color:var(--accent-blue);"></div>
+                        <div id="crypto-res" style="margin-top:12px; font-family:'Fira Code', monospace; font-size:0.85rem; color:var(--primary-blue);"></div>
                     </div>
                 </div>
 
                 <div class="grid-2">
                     <div class="table-wrapper">
-                        <h3 style="font-size: 1.1rem; margin-bottom: 12px;">AI Text Translator</h3>
+                        <h3 style="font-size: 1.05rem; margin-bottom: 12px;">AI Text Translator</h3>
                         <div class="form-group">
                             <label>Text to Translate</label>
                             <textarea id="trans-text" class="form-input" rows="3" placeholder="Hello, welcome to StanlOS..."></textarea>
@@ -826,11 +843,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                             <input type="text" id="trans-lang" class="form-input" value="Swahili">
                         </div>
                         <button class="btn-primary" onclick="translateAiText()">Translate</button>
-                        <div id="trans-res" style="margin-top:12px; font-size:0.9rem; background:var(--bg-black); padding:12px; border:1px solid var(--border);"></div>
+                        <div id="trans-res" style="margin-top:12px; font-size:0.9rem; background:var(--bg-dark); padding:12px; border:1px solid var(--border);"></div>
                     </div>
 
                     <div class="table-wrapper">
-                        <h3 style="font-size: 1.1rem; margin-bottom: 12px;">Wikipedia Summary Search</h3>
+                        <h3 style="font-size: 1.05rem; margin-bottom: 12px;">Wikipedia Summary Search</h3>
                         <div class="form-group">
                             <label>Concept / Entity</label>
                             <input type="text" id="wiki-query" class="form-input" placeholder="Artificial Intelligence">
@@ -844,12 +861,12 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             <!-- SETTINGS TAB -->
             <div id="tab-settings" class="tab-panel">
                 <div class="table-wrapper">
-                    <h3 style="font-size: 1.1rem; margin-bottom: 12px;">System Configuration</h3>
+                    <h3 style="font-size: 1.05rem; margin-bottom: 12px;">System Configuration</h3>
                     <div style="font-family:'Fira Code', monospace; font-size:0.85rem; color:var(--text-muted); display:flex; flex-direction:column; gap:8px;">
                         <div>Engine: FastAPI / Gunicorn UvicornWorker</div>
                         <div>Telegram Bot: @stanlosbot</div>
                         <div>AI Model: Cloudflare Llama 3.1 8B</div>
-                        <div>Database: SQLite Cloud / Local SQLite</div>
+                        <div>Database: SQLite Cloud Persistent Address</div>
                     </div>
                 </div>
             </div>
@@ -858,6 +875,9 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     </div>
 
     <script>
+        let allTransactionsCache = [];
+        let financeChartObj = null;
+
         function toggleMobileMenu() {
             const sidebar = document.getElementById('app-sidebar');
             sidebar.classList.toggle('mobile-open');
@@ -877,7 +897,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 if(data.success) {
                     localStorage.setItem('stanlos_token', data.token);
                     document.getElementById('login-modal').classList.add('hidden');
-                    loadStats();
+                    loadFinance();
                 } else {
                     document.getElementById('login-err').innerText = data.detail || 'Invalid username or password.';
                 }
@@ -896,15 +916,160 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             document.getElementById('tab-' + name).classList.add('active');
             document.getElementById('tab-header-title').innerText = el.innerText.trim();
             
-            // Close mobile menu after switching tab
             const sidebar = document.getElementById('app-sidebar');
             sidebar.classList.remove('mobile-open');
 
-            if(name === 'userbot') loadUserbotStatus();
             if(name === 'finance') loadFinance();
+            if(name === 'overview') loadStats();
+            if(name === 'userbot') loadUserbotStatus();
             if(name === 'contacts') loadContacts();
             if(name === 'tasks') loadTasks();
             if(name === 'memory') loadMemory();
+        }
+
+        function loadFinance() {
+            // Load Finance Summary
+            fetch('/api/finance/summary')
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById('fin-income').innerText = 'KES ' + d.total_income.toLocaleString();
+                document.getElementById('fin-expense').innerText = 'KES ' + d.total_expense.toLocaleString();
+                document.getElementById('fin-net').innerText = 'KES ' + d.net_balance.toLocaleString();
+                
+                allTransactionsCache = d.recent_transactions;
+                renderTransactionTable(allTransactionsCache);
+            });
+
+            // Load Finance Analytics
+            fetch('/api/finance/analytics')
+            .then(r => r.json())
+            .then(d => {
+                // Render Chart
+                renderFinanceChart(d.chart);
+
+                // Render Category Breakdown Progress Bars
+                let catHtml = '';
+                if(d.categories && d.categories.length > 0) {
+                    d.categories.forEach(c => {
+                        catHtml += `<div>
+                            <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+                                <span><b>${c.category}</b> (${c.count} txns)</span>
+                                <span>KES ${c.amount.toLocaleString()} (${c.percentage}%)</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" style="width: ${Math.min(c.percentage, 100)}%;"></div>
+                            </div>
+                        </div>`;
+                    });
+                } else {
+                    catHtml = '<div style="color:var(--text-muted); font-size:0.85rem;">No category data recorded</div>';
+                }
+                document.getElementById('cat-breakdown-container').innerHTML = catHtml;
+
+                // Render Top Vendors
+                let vendorHtml = '';
+                if(d.top_vendors && d.top_vendors.length > 0) {
+                    d.top_vendors.forEach(v => {
+                        vendorHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; padding:8px 0; border-bottom:1px solid var(--border);">
+                            <span><b>${v.vendor}</b></span>
+                            <span style="font-family:'Fira Code', monospace; color:var(--accent-red);">KES ${v.amount.toLocaleString()}</span>
+                        </div>`;
+                    });
+                } else {
+                    vendorHtml = '<div style="color:var(--text-muted); font-size:0.85rem;">No vendor data recorded</div>';
+                }
+                document.getElementById('top-vendors-container').innerHTML = vendorHtml;
+            });
+        }
+
+        function renderTransactionTable(txns) {
+            let html = '';
+            if(txns && txns.length > 0) {
+                txns.forEach(t => {
+                    html += `<tr>
+                        <td><code>${t.code}</code></td>
+                        <td>KES ${t.amount.toLocaleString()}</td>
+                        <td>${t.vendor}</td>
+                        <td>${t.category}</td>
+                        <td><span class="tag ${t.type==='income'?'tag-income':'tag-expense'}">${t.type}</span></td>
+                        <td>${t.date}</td>
+                    </tr>`;
+                });
+            } else {
+                html = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No transactions match your search</td></tr>';
+            }
+            document.getElementById('txn-table-body').innerHTML = html;
+        }
+
+        function filterTransactions() {
+            const q = document.getElementById('txn-search').value.toLowerCase().trim();
+            if(!q) {
+                renderTransactionTable(allTransactionsCache);
+                return;
+            }
+            const filtered = allTransactionsCache.filter(t => 
+                t.code.toLowerCase().includes(q) || 
+                t.vendor.toLowerCase().includes(q) || 
+                t.category.toLowerCase().includes(q)
+            );
+            renderTransactionTable(filtered);
+        }
+
+        function renderFinanceChart(chartData) {
+            const ctx = document.getElementById('financeChart').getContext('2d');
+            if(financeChartObj) {
+                financeChartObj.destroy();
+            }
+            financeChartObj = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartData.dates,
+                    datasets: [
+                        {
+                            label: 'Income (KES)',
+                            data: chartData.income,
+                            backgroundColor: '#10B981',
+                            borderColor: '#10B981',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Expense (KES)',
+                            data: chartData.expense,
+                            backgroundColor: '#EF4444',
+                            borderColor: '#EF4444',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: '#1E2330' }, ticks: { color: '#9CA3AF' } },
+                        y: { grid: { color: '#1E2330' }, ticks: { color: '#9CA3AF' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#F3F4F6' } }
+                    }
+                }
+            });
+        }
+
+        function testSmsParse() {
+            const txt = document.getElementById('sms-raw-input').value.trim();
+            if(!txt) return;
+            
+            document.getElementById('sms-parse-out').innerText = 'Processing SMS...';
+            fetch('/api/finance/parse_sms', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({sms_text: txt})
+            })
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById('sms-parse-out').innerText = JSON.stringify(d.result, null, 2);
+                loadFinance();
+            });
         }
 
         function loadStats() {
@@ -944,59 +1109,6 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             .then(r => r.json())
             .then(d => {
                 document.getElementById('ub-send-res').innerText = d.result || d.error;
-            });
-        }
-
-        function loadFinance() {
-            fetch('/api/finance/summary')
-            .then(r => r.json())
-            .then(d => {
-                document.getElementById('fin-income').innerText = 'KES ' + d.total_income.toLocaleString();
-                document.getElementById('fin-expense').innerText = 'KES ' + d.total_expense.toLocaleString();
-                document.getElementById('fin-net').innerText = 'KES ' + d.net_balance.toLocaleString();
-                
-                let html = '';
-                d.recent_transactions.forEach(t => {
-                    html += `<tr>
-                        <td><code>${t.code}</code></td>
-                        <td>KES ${t.amount}</td>
-                        <td>${t.vendor}</td>
-                        <td>${t.category}</td>
-                        <td><span class="tag ${t.type==='income'?'tag-income':'tag-expense'}">${t.type}</span></td>
-                        <td>${t.date}</td>
-                    </tr>`;
-                });
-                document.getElementById('txn-table-body').innerHTML = html || '<tr><td colspan="6">No transactions logged</td></tr>';
-            });
-        }
-
-        function submitFinanceLog() {
-            const amt = parseFloat(document.getElementById('fin-add-amount').value);
-            const v = document.getElementById('fin-add-vendor').value.trim();
-            const c = document.getElementById('fin-add-cat').value.trim();
-            const t = document.getElementById('fin-add-type').value;
-            if(!amt || !v) return;
-            
-            fetch('/api/finance/add', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({amount: amt, vendor: v, category: c || 'General', transaction_type: t})
-            }).then(() => loadFinance());
-        }
-
-        function testSmsParse() {
-            const txt = document.getElementById('sms-raw-input').value.trim();
-            if(!txt) return;
-            
-            fetch('/api/finance/parse_sms', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({sms_text: txt})
-            })
-            .then(r => r.json())
-            .then(d => {
-                document.getElementById('sms-parse-out').innerText = JSON.stringify(d.result, null, 2);
-                loadFinance();
             });
         }
 
@@ -1144,7 +1256,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         }
 
         function quickAction(msg) {
-            switchTab('agent', document.querySelectorAll('.nav-item')[1]);
+            switchTab('agent', document.querySelectorAll('.nav-item')[2]);
             document.getElementById('chat-input').value = msg;
             sendAgentMessage();
         }
@@ -1165,7 +1277,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             .then(d => {
                 let html = '';
                 d.results.forEach(t => {
-                    html += `<div style="background:var(--bg-black); border:1px solid var(--border); padding:14px; display:flex; justify-content:space-between; align-items:center;">
+                    html += `<div style="background:var(--bg-dark); border:1px solid var(--border); padding:14px; display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <div style="font-weight:600;">${t.title}</div>
                             <div style="font-size:0.8rem; color:var(--text-muted);">${t.uploader} • ${t.duration_string}</div>
@@ -1228,10 +1340,10 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             .then(d => { document.getElementById('wiki-res').innerText = d.result; });
         }
 
-        // Auto check login session
+        // Auto load finance on startup
         if(localStorage.getItem('stanlos_token')) {
             document.getElementById('login-modal').classList.add('hidden');
-            loadStats();
+            loadFinance();
         }
     </script>
 </body>

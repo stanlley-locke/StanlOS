@@ -161,6 +161,73 @@ async def get_finance_summary():
         "recent_transactions": formatted_txns
     }
 
+@router.get("/finance/analytics")
+async def get_finance_analytics():
+    # Category Breakdown
+    cat_rows = await db.execute(
+        "SELECT category, SUM(amount), COUNT(*) FROM transactions WHERE transaction_type = 'expense' GROUP BY category ORDER BY SUM(amount) DESC",
+        fetch=True
+    )
+    total_exp_res = await db.execute("SELECT SUM(amount) FROM transactions WHERE transaction_type = 'expense'", fetch=True)
+    total_exp = total_exp_res[0][0] or 1.0 if total_exp_res else 1.0
+    
+    categories = []
+    if cat_rows:
+        for c in cat_rows:
+            cat_name = c[0] or "Other"
+            amt = c[1] or 0.0
+            cnt = c[2]
+            pct = round((amt / total_exp) * 100, 1) if total_exp > 0 else 0.0
+            categories.append({
+                "category": cat_name.capitalize(),
+                "amount": amt,
+                "count": cnt,
+                "percentage": pct
+            })
+            
+    # Top Vendors Breakdown
+    vendor_rows = await db.execute(
+        "SELECT vendor, SUM(amount), COUNT(*) FROM transactions WHERE transaction_type = 'expense' GROUP BY vendor ORDER BY SUM(amount) DESC LIMIT 5",
+        fetch=True
+    )
+    top_vendors = []
+    if vendor_rows:
+        for v in vendor_rows:
+            top_vendors.append({
+                "vendor": v[0] or "General",
+                "amount": v[1] or 0.0,
+                "count": v[2]
+            })
+
+    # Recent 7 Days Chart Data
+    daily_rows = await db.execute(
+        "SELECT DATE(created_at) as tdate, transaction_type, SUM(amount) FROM transactions GROUP BY DATE(created_at), transaction_type ORDER BY tdate ASC LIMIT 14",
+        fetch=True
+    )
+    daily_map = {}
+    if daily_rows:
+        for r in daily_rows:
+            d_str = r[0]
+            ttype = r[1]
+            amt = r[2] or 0.0
+            if d_str not in daily_map:
+                daily_map[d_str] = {"income": 0.0, "expense": 0.0}
+            daily_map[d_str][ttype] = amt
+
+    chart_dates = list(daily_map.keys())
+    chart_income = [daily_map[d]["income"] for d in chart_dates]
+    chart_expense = [daily_map[d]["expense"] for d in chart_dates]
+
+    return {
+        "categories": categories,
+        "top_vendors": top_vendors,
+        "chart": {
+            "dates": chart_dates or [time.strftime("%Y-%m-%d")],
+            "income": chart_income or [0.0],
+            "expense": chart_expense or [0.0]
+        }
+    }
+
 @router.post("/finance/add")
 async def add_finance_log(req: FinanceLogRequest):
     admin_id = settings.ADMIN_IDS[0] if settings.ADMIN_IDS else 0
