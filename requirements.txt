@@ -1,5 +1,6 @@
 # Web and API
 fastapi
+gunicorn==22.0.0
 uvicorn[standard]
 aiohttp
 httpx
@@ -21,7 +22,8 @@ numpy==1.26.4
 pypdf==4.2.0
 
 # Media
-yt-dlp==2024.5.27
+yt-dlp>=2024.7.0
+imageio-ffmpeg
 
 # Utilities
 beautifulsoup4==4.12.3

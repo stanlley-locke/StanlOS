@@ -28,6 +28,7 @@ class Settings:
     API_ID: int = int(os.environ.get("API_ID", "0"))
     API_HASH: str = os.environ.get("API_HASH", "")
     PHONE_NUMBER: str = os.environ.get("PHONE_NUMBER", "")
+    PYROGRAM_SESSION_STRING: str = os.environ.get("PYROGRAM_SESSION_STRING", "")
             
     # Cloudflare AI
     CLOUDFLARE_ACCOUNT_ID: str = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "")
