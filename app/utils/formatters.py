@@ -98,24 +98,24 @@ def format_dashboard(data: dict) -> str:
 def build_main_menu_kb(is_admin: bool = True) -> InlineKeyboardMarkup:
     rows = [
         [
-            InlineKeyboardButton(text="Finance & Accounting", callback_data="menu:finance"),
-            InlineKeyboardButton(text="Expense Breakdown", callback_data="fin:summary")
+            InlineKeyboardButton(text="Academic & Tasks", callback_data="menu:academic"),
+            InlineKeyboardButton(text="Finance & MPESA", callback_data="menu:finance")
         ],
         [
-            InlineKeyboardButton(text="Log Expense", callback_data="fin:action_expense"),
-            InlineKeyboardButton(text="Log Income", callback_data="fin:action_income")
-        ],
-        [
-            InlineKeyboardButton(text="Tasks & Workload", callback_data="menu:academic"),
-            InlineKeyboardButton(text="Knowledge RAG", callback_data="menu:knowledge")
-        ],
-        [
-            InlineKeyboardButton(text="Network CRM", callback_data="menu:crm"),
-            InlineKeyboardButton(text="Tools & Utilities", callback_data="menu:tools")
+            InlineKeyboardButton(text="Knowledge RAG", callback_data="menu:knowledge"),
+            InlineKeyboardButton(text="Network CRM", callback_data="menu:crm")
         ],
         [
             InlineKeyboardButton(text="Media Extractor", callback_data="menu:media"),
-            InlineKeyboardButton(text="AI Agent Terminal", callback_data="menu:ai_chat")
+            InlineKeyboardButton(text="Tools & Utilities", callback_data="menu:tools")
+        ],
+        [
+            InlineKeyboardButton(text="Weather Forecast", callback_data="menu:weather"),
+            InlineKeyboardButton(text="Math Calculator", callback_data="menu:calc")
+        ],
+        [
+            InlineKeyboardButton(text="Gamification", callback_data="menu:gamification"),
+            InlineKeyboardButton(text="Autonomous AI Chat", callback_data="menu:ai_chat")
         ]
     ]
     
