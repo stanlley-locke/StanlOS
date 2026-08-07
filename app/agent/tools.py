@@ -265,6 +265,46 @@ async def list_tasks(user_id: int | str) -> str:
     except Exception as e:
         return f"Failed to list tasks: {e}"
 
+@registry.register("delete_task", "Deletes a task by ID or deletes all tasks. Requires 'user_id' (int), optional 'task_id' (int/string), or 'all_tasks' (bool).")
+async def delete_task(user_id: int | str, task_id: int | str = None, all_tasks: bool = False) -> str:
+    from app.core.database import db
+    try:
+        uid = int(user_id)
+        if all_tasks or (task_id and str(task_id).lower() in ["all", "everything", "*", "true"]):
+            await db.execute("DELETE FROM tasks WHERE user_id = ?", (uid,))
+            return "All tasks have been deleted from your task list."
+        elif task_id and str(task_id).isdigit():
+            tid = int(task_id)
+            await db.execute("DELETE FROM tasks WHERE user_id = ? AND id = ?", (uid, tid))
+            return f"Task #{tid} has been deleted."
+        else:
+            # Delete latest task if no ID specified
+            await db.execute("DELETE FROM tasks WHERE user_id = ? ORDER BY id DESC LIMIT 1", (uid,))
+            return "Latest task has been deleted."
+    except Exception as e:
+        return f"Failed to delete task: {e}"
+
+@registry.register("complete_task", "Marks a task as completed. Requires 'user_id' (int) and 'task_id' (int).")
+async def complete_task(user_id: int | str, task_id: int | str) -> str:
+    from app.core.database import db
+    try:
+        uid = int(user_id)
+        tid = int(task_id)
+        await db.execute("UPDATE tasks SET status = 'completed', completed_at = CURRENT_TIMESTAMP WHERE user_id = ? AND id = ?", (uid, tid))
+        return f"Task #{tid} marked as completed."
+    except Exception as e:
+        return f"Failed to complete task: {e}"
+
+@registry.register("clear_tasks", "Clears all pending and completed tasks for a user. Requires 'user_id' (int).")
+async def clear_tasks(user_id: int | str) -> str:
+    from app.core.database import db
+    try:
+        uid = int(user_id)
+        await db.execute("DELETE FROM tasks WHERE user_id = ?", (uid,))
+        return "All tasks have been cleared."
+    except Exception as e:
+        return f"Failed to clear tasks: {e}"
+
 @registry.register("search_memory", "Performs semantic search over RAG indexed documents. Requires 'user_id' (int) and 'query' (string).")
 async def search_memory(user_id: int | str, query: str) -> str:
     from app.services.knowledge_base import kb_service

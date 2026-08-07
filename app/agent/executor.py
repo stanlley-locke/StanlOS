@@ -15,7 +15,8 @@ Available Tools:
 {tools}
 
 Instructions:
-- Use specific domain tools (e.g. 'log_expense', 'log_income', 'add_task', 'add_contact', 'search_memory', 'search_youtube_songs', 'get_weather', 'search_web') to execute tasks directly.
+- Use specific domain tools (e.g. 'log_expense', 'log_income', 'add_task', 'delete_task', 'clear_tasks', 'complete_task', 'add_contact', 'search_memory', 'search_youtube_songs', 'get_weather', 'search_web') to execute tasks directly.
+- TASK DELETION RULE: To delete, remove, or clear tasks, use 'delete_task' or 'clear_tasks'. DO NOT call 'add_task' when asked to delete or cancel tasks!
 - CRITICAL: DO NOT call 'userbot_send' or 'userbot_read' to deliver answers to the current user. To answer the user or present search/tool results, set "action": "Final Answer" and put your response in "action_input": {{"answer": "..."}}.
 - ALWAYS respond in RAW JSON ONLY. NO MARKDOWN BLOCKS (` ```json `), NO EXPLANATIONS OUTSIDE JSON.
 
