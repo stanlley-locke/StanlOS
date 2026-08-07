@@ -317,16 +317,58 @@ async def search_memory(user_id: int | str, query: str) -> str:
     except Exception as e:
         return f"Memory search error: {e}"
 
-@registry.register("search_youtube_songs", "Searches YouTube for music tracks/songs. Requires 'query' string (e.g. 'Alan Walker Faded').")
-async def search_youtube_songs_tool(query: str) -> str:
+@registry.register("search_songs", "Searches for music tracks/songs. Requires 'query' string (e.g. 'Alan Walker Faded').")
+async def search_songs_tool(query: str) -> str:
     from app.services.media_tools import media_tools
-    results = await media_tools.search_youtube_songs(query, max_results=5)
+    results = await media_tools.search_soundcloud_songs(query, max_results=5)
     if not results:
-        return f"No YouTube songs found matching '{query}'."
+        return f"No songs found matching '{query}'."
     formatted = []
     for idx, r in enumerate(results, 1):
         formatted.append(f"{idx}. {r['title']} — {r['uploader']} ({r['duration']})\n   URL: {r['url']}")
     return "\n\n".join(formatted)
+
+@registry.register("download_song", "Downloads an MP3 song and sends it directly to the user. Requires 'user_id' (int) and 'song_name' (string). Use this whenever the user asks to download a specific song or music track.")
+async def download_song_tool(user_id: int | str, song_name: str) -> str:
+    from app.services.media_tools import media_tools
+    import os
+    
+    # 1. Search for the song on SoundCloud (to bypass YouTube bot checks)
+    results = await media_tools.search_soundcloud_songs(song_name, max_results=1)
+    if not results:
+        return f"Could not find any song matching '{song_name}'."
+        
+    url = results[0].get('url')
+    if not url:
+        return f"Failed to extract URL for '{song_name}'."
+        
+    # 2. Download the audio
+    file_path, title, artist = await media_tools.download_media_audio(url)
+    
+    if file_path and os.path.exists(file_path):
+        from aiogram.types import FSInputFile
+        from app.bot.dispatcher import bot
+        safe_name = os.path.basename(file_path)
+        audio_file = FSInputFile(file_path, filename=safe_name)
+        
+        try:
+            # 3. Send the audio file to the user
+            await bot.send_audio(
+                chat_id=int(user_id),
+                audio=audio_file,
+                title=title,
+                performer=artist
+            )
+            # Cleanup
+            try:
+                os.remove(file_path)
+            except Exception:
+                pass
+            return f"Successfully downloaded and sent the song '{title}' to the user."
+        except Exception as e:
+            return f"Failed to send audio to user: {e}"
+    else:
+        return f"Failed to extract or download the song '{song_name}'."
 
 @registry.register("currency_converter", "Converts currency amounts between USD, KES, EUR, GBP, CAD, TZS, UGX. Requires 'amount' (float), 'from_currency' (string), and 'to_currency' (string).")
 async def currency_converter(amount: float | str, from_currency: str = "USD", to_currency: str = "KES") -> str:

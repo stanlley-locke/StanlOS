@@ -1,7 +1,7 @@
 import os
 import asyncio
 
-# Ensure MainThread has a valid event loop during configuration load
+#Ensure MainThread  event loop validation
 try:
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -9,7 +9,7 @@ except Exception:
     pass
 
 def post_fork(server, worker):
-    """Ensure each worker process has a dedicated event loop before app initialization."""
+    """Each worker process dedicated event loop before app initialization."""
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
