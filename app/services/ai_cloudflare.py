@@ -41,8 +41,10 @@ class CloudflareAI:
         messages format: [{"role": "system", "content": "..."}, {"role": "user", "content": "..."}]
         """
         model = model or settings.CLOUDFLARE_MODEL_TEXT
-        payload = {"messages": messages}
-        
+        payload = {
+            "messages": messages,
+            "max_tokens": 2048
+        }        
         result = await self._post(model, payload)
         if result and "response" in result:
             return result["response"]
@@ -77,6 +79,13 @@ class CloudflareAI:
                 
         except Exception as e:
             logger.info(f"JSON parsing fallback triggered. Returning raw text as answer. Raw: {raw_resp}")
+            
+            import re
+            match = re.search(r'"answer"\s*:\s*"([^"]*)', raw_resp)
+            if match:
+                answer_text = match.group(1).replace('\\n', '\n')
+                return {"thought": "Generated response", "action": "Final Answer", "action_input": {"answer": answer_text}}
+                
             return {"thought": "Generated response", "action": "Final Answer", "action_input": {"answer": raw_resp}}
 
     async def generate_embeddings(self, text: str, model: str = None) -> Optional[List[float]]:
