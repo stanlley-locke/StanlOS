@@ -3,30 +3,27 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StanlOS — Universal AI OS & Bot Dashboard</title>
+    <title>StanlOS Console</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
-            --bg-dark: #07090E;
-            --bg-card: rgba(15, 23, 42, 0.75);
-            --bg-card-hover: rgba(30, 41, 59, 0.85);
-            --border-glass: rgba(255, 255, 255, 0.08);
-            --border-accent: rgba(6, 182, 212, 0.3);
+            --bg-black: #09090B;
+            --bg-panel: #18181B;
+            --bg-input: #09090B;
+            --border: #27272A;
+            --border-hover: #3F3F46;
             
-            --primary: #06B6D4;
-            --primary-glow: rgba(6, 182, 212, 0.4);
-            --indigo: #6366F1;
-            --indigo-glow: rgba(99, 102, 241, 0.4);
-            --emerald: #10B981;
-            --rose: #F43F5E;
-            --amber: #F59E0B;
+            --text-white: #FAFAFA;
+            --text-muted: #A1A1AA;
+            --text-subtle: #71717A;
             
-            --text-main: #F8FAFC;
-            --text-muted: #94A3B8;
-            --text-subtle: #64748B;
+            --accent-blue: #2563EB;
+            --accent-blue-hover: #1D4ED8;
+            --accent-green: #16A34A;
+            --accent-red: #DC2626;
         }
 
         * {
@@ -34,111 +31,120 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             padding: 0;
             box-sizing: border-box;
             font-family: 'Inter', sans-serif;
+            border-radius: 0 !important; /* Square corners everywhere */
+            box-shadow: none !important;  /* No glowy elements */
+            text-shadow: none !important;
         }
 
         body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
+            background-color: var(--bg-black);
+            color: var(--text-white);
             min-height: 100vh;
             overflow-x: hidden;
-            background-image: 
-                radial-gradient(circle at 15% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 40%),
-                radial-gradient(circle at 85% 80%, rgba(99, 102, 241, 0.12) 0%, transparent 40%);
         }
 
-        /* --- LOGIN MODAL OVERLAY --- */
+        /* LOGIN MODAL OVERLAY */
         #login-modal {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(7, 9, 14, 0.92);
-            backdrop-filter: blur(16px);
+            background: #000000;
             z-index: 9999;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.4s ease;
         }
 
         .login-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-glass);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 40px var(--primary-glow);
-            border-radius: 24px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
             padding: 40px;
             width: 100%;
-            max-width: 440px;
-            text-align: center;
-            position: relative;
+            max-width: 400px;
         }
 
         .login-card h2 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #FFF 0%, var(--primary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
+            color: var(--text-white);
+            margin-bottom: 6px;
         }
 
         .login-card p {
             color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-bottom: 28px;
+            font-size: 0.85rem;
+            margin-bottom: 24px;
+        }
+
+        .credentials-notice {
+            background: #09090B;
+            border: 1px solid var(--border);
+            padding: 12px;
+            margin-bottom: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-blue);
         }
 
         .form-group {
-            margin-bottom: 20px;
-            text-align: left;
+            margin-bottom: 18px;
         }
 
         .form-group label {
             display: block;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: var(--text-muted);
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .form-input {
             width: 100%;
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid var(--border-glass);
-            border-radius: 12px;
-            padding: 14px 16px;
-            color: #FFF;
-            font-size: 0.95rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            padding: 12px 14px;
+            color: var(--text-white);
+            font-size: 0.9rem;
             outline: none;
-            transition: all 0.3s ease;
+            transition: border-color 0.15s ease;
         }
 
         .form-input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 15px var(--primary-glow);
+            border-color: var(--accent-blue);
         }
 
         .btn-primary {
             width: 100%;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--indigo) 100%);
-            border: none;
-            border-radius: 12px;
-            padding: 14px;
-            color: #FFF;
+            background: var(--accent-blue);
+            border: 1px solid var(--accent-blue);
+            padding: 12px;
+            color: #FFFFFF;
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 0.9rem;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 20px var(--primary-glow);
+            transition: background 0.15s ease;
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px var(--primary-glow);
+            background: var(--accent-blue-hover);
         }
 
-        /* --- DASHBOARD LAYOUT --- */
+        .btn-secondary {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            color: var(--text-white);
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--border-hover);
+        }
+
+        /* LAYOUT */
         .app-container {
             display: flex;
             min-height: 100vh;
@@ -146,74 +152,66 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
         /* SIDEBAR */
         .sidebar {
-            width: 260px;
-            background: rgba(15, 23, 42, 0.6);
-            border-right: 1px solid var(--border-glass);
-            backdrop-filter: blur(12px);
-            padding: 24px;
+            width: 240px;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
             display: flex;
             flex-direction: column;
         }
 
         .brand-logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 36px;
-        }
-
-        .brand-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, var(--primary), var(--indigo));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-            box-shadow: 0 0 15px var(--primary-glow);
+            padding: 0 24px;
+            margin-bottom: 28px;
         }
 
         .brand-title {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.4rem;
-            font-weight: 800;
-            letter-spacing: -0.5px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .brand-sub {
+            font-size: 0.75rem;
+            color: var(--text-subtle);
+            font-family: 'Fira Code', monospace;
         }
 
         .nav-menu {
             list-style: none;
             display: flex;
             flex-direction: column;
-            gap: 8px;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
-            gap: 14px;
-            padding: 12px 16px;
-            border-radius: 12px;
+            gap: 12px;
+            padding: 12px 24px;
             color: var(--text-muted);
+            font-size: 0.88rem;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.25s ease;
+            border-left: 3px solid transparent;
+            transition: all 0.15s ease;
         }
 
-        .nav-item:hover, .nav-item.active {
-            color: #FFF;
-            background: rgba(255, 255, 255, 0.05);
-            border-left: 3px solid var(--primary);
+        .nav-item:hover {
+            color: var(--text-white);
+            background: #27272A;
         }
 
         .nav-item.active {
-            background: linear-gradient(90deg, rgba(6, 182, 212, 0.15) 0%, transparent 100%);
+            color: var(--text-white);
+            background: #27272A;
+            border-left-color: var(--accent-blue);
         }
 
-        /* MAIN CONTENT AREA */
+        /* MAIN CONTENT */
         .main-content {
             flex: 1;
             padding: 32px;
+            background: var(--bg-black);
             overflow-y: auto;
         }
 
@@ -221,68 +219,55 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 32px;
+            padding-bottom: 24px;
+            margin-bottom: 28px;
+            border-bottom: 1px solid var(--border);
         }
 
         .page-title h1 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: 700;
         }
 
-        .status-pill {
+        .status-badge {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            color: var(--emerald);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.85rem;
+            background: #09090B;
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+            padding: 4px 12px;
+            font-size: 0.75rem;
             font-weight: 600;
+            font-family: 'Fira Code', monospace;
         }
 
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--emerald);
-            border-radius: 50%;
-            box-shadow: 0 0 10px var(--emerald);
-        }
-
-        /* GRID METRICS */
+        /* STATS GRID */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-            margin-bottom: 32px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
         }
 
         .stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-glass);
-            border-radius: 16px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
             padding: 20px;
-            backdrop-filter: blur(12px);
-            transition: all 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-3px);
-            border-color: var(--border-accent);
         }
 
         .stat-label {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             color: var(--text-muted);
             margin-bottom: 8px;
         }
 
         .stat-value {
-            font-family: 'Outfit', sans-serif;
             font-size: 1.8rem;
             font-weight: 700;
+            font-family: 'Fira Code', monospace;
         }
 
         /* TAB PANELS */
@@ -293,87 +278,90 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             display: block;
         }
 
-        /* CHAT TERMINAL MODULE */
+        /* CHAT MODULE */
         .chat-container {
-            background: var(--bg-card);
-            border: 1px solid var(--border-glass);
-            border-radius: 20px;
-            height: 600px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            height: 550px;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
         }
 
         .chat-messages {
             flex: 1;
-            padding: 24px;
+            padding: 20px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
+            background: var(--bg-black);
         }
 
         .msg-bubble {
-            max-width: 80%;
-            padding: 14px 18px;
-            border-radius: 16px;
-            font-size: 0.95rem;
+            max-width: 85%;
+            padding: 12px 16px;
+            font-size: 0.9rem;
             line-height: 1.5;
+            border: 1px solid var(--border);
         }
 
         .msg-user {
             align-self: flex-end;
-            background: linear-gradient(135deg, var(--indigo) 0%, var(--primary) 100%);
-            color: #FFF;
-            border-bottom-right-radius: 4px;
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: #FFFFFF;
         }
 
         .msg-bot {
             align-self: flex-start;
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid var(--border-glass);
-            color: var(--text-main);
-            border-bottom-left-radius: 4px;
+            background: var(--bg-panel);
+            color: var(--text-white);
         }
 
         .chat-input-area {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             padding: 16px;
-            background: rgba(15, 23, 42, 0.9);
-            border-top: 1px solid var(--border-glass);
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border);
         }
 
-        /* TABLES */
+        /* DATA TABLES */
+        .table-wrapper {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            padding: 20px;
+        }
+
         .data-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 16px;
         }
 
         .data-table th, .data-table td {
-            padding: 14px 16px;
+            padding: 12px 14px;
             text-align: left;
-            border-bottom: 1px solid var(--border-glass);
-            font-size: 0.9rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
         }
 
         .data-table th {
             color: var(--text-muted);
             font-weight: 600;
             text-transform: uppercase;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
+            letter-spacing: 0.5px;
         }
 
         .tag {
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.75rem;
+            padding: 2px 8px;
+            font-size: 0.72rem;
             font-weight: 600;
-
+            font-family: 'Fira Code', monospace;
+            border: 1px solid transparent;
         }
-        .tag-expense { background: rgba(244, 63, 94, 0.15); color: var(--rose); }
-        .tag-income { background: rgba(16, 185, 129, 0.15); color: var(--emerald); }
+        .tag-expense { border-color: var(--accent-red); color: var(--accent-red); }
+        .tag-income { border-color: var(--accent-green); color: var(--accent-green); }
 
         .hidden { display: none !important; }
     </style>
@@ -383,20 +371,24 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     <!-- AUTHENTICATION OVERLAY -->
     <div id="login-modal">
         <div class="login-card">
-            <div class="brand-icon" style="margin: 0 auto 16px; width:56px; height:56px; font-size:1.6rem;">⚡</div>
-            <h2>StanlOS Dashboard</h2>
-            <p>Enter your Administrator credentials to continue</p>
+            <h2>StanlOS Console</h2>
+            <p>Administrator Sign In</p>
+            
+            <div class="credentials-notice">
+                <div>Username: admin@stanlos.app</div>
+                <div>Password: admin123</div>
+            </div>
             
             <div class="form-group">
                 <label>Username / Email</label>
-                <input type="text" id="login-username" class="form-input" placeholder="admin" value="admin">
+                <input type="text" id="login-username" class="form-input" value="admin@stanlos.app">
             </div>
             <div class="form-group">
                 <label>Password</label>
-                <input type="password" id="login-password" class="form-input" placeholder="••••••••" value="admin123">
+                <input type="password" id="login-password" class="form-input" value="admin123">
             </div>
             <button class="btn-primary" onclick="doLogin()">Log In to Console</button>
-            <div id="login-err" style="color: var(--rose); font-size: 0.85rem; margin-top: 12px;"></div>
+            <div id="login-err" style="color: var(--accent-red); font-size: 0.8rem; margin-top: 12px;"></div>
         </div>
     </div>
 
@@ -406,23 +398,23 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="brand-logo">
-                <div class="brand-icon">⚡</div>
-                <div class="brand-title">StanlOS <span style="color: var(--primary); font-size:0.8rem;">V2</span></div>
+                <div class="brand-title">StanlOS</div>
+                <div class="brand-sub">CONTROL CENTER V2.0</div>
             </div>
             
             <ul class="nav-menu">
-                <li class="nav-item active" onclick="switchTab('overview', this)"><i class="fa-solid fa-chart-pie"></i> Overview</li>
-                <li class="nav-item" onclick="switchTab('agent', this)"><i class="fa-solid fa-robot"></i> AI Agent Chat</li>
-                <li class="nav-item" onclick="switchTab('finance', this)"><i class="fa-solid fa-wallet"></i> Finance & MPESA</li>
+                <li class="nav-item active" onclick="switchTab('overview', this)"><i class="fa-solid fa-chart-line"></i> Overview</li>
+                <li class="nav-item" onclick="switchTab('agent', this)"><i class="fa-solid fa-terminal"></i> AI Agent Chat</li>
+                <li class="nav-item" onclick="switchTab('finance', this)"><i class="fa-solid fa-credit-card"></i> Finance & MPESA</li>
                 <li class="nav-item" onclick="switchTab('media', this)"><i class="fa-solid fa-music"></i> YouTube & Media</li>
-                <li class="nav-item" onclick="switchTab('contacts', this)"><i class="fa-solid fa-address-book"></i> CRM Contacts</li>
-                <li class="nav-item" onclick="switchTab('tasks', this)"><i class="fa-solid fa-list-check"></i> Tasks Board</li>
-                <li class="nav-item" onclick="switchTab('memory', this)"><i class="fa-solid fa-brain"></i> Memory & RAG</li>
-                <li class="nav-item" onclick="switchTab('settings', this)"><i class="fa-solid fa-gear"></i> System Config</li>
+                <li class="nav-item" onclick="switchTab('contacts', this)"><i class="fa-solid fa-users"></i> CRM Contacts</li>
+                <li class="nav-item" onclick="switchTab('tasks', this)"><i class="fa-solid fa-check-square"></i> Tasks Board</li>
+                <li class="nav-item" onclick="switchTab('memory', this)"><i class="fa-solid fa-database"></i> Memory & RAG</li>
+                <li class="nav-item" onclick="switchTab('settings', this)"><i class="fa-solid fa-sliders"></i> System Config</li>
             </ul>
 
-            <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border-glass);">
-                <button class="btn-primary" style="background: rgba(244, 63, 94, 0.2); color: var(--rose);" onclick="doLogout()">Logout</button>
+            <div style="margin-top: auto; padding: 0 24px;">
+                <button class="btn-secondary" style="width: 100%; text-align: center;" onclick="doLogout()">Logout</button>
             </div>
         </aside>
 
@@ -435,8 +427,8 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                     <h1 id="tab-header-title">Dashboard Overview</h1>
                 </div>
                 <div style="display: flex; gap: 16px; align-items: center;">
-                    <div class="status-pill"><div class="status-dot"></div> SYSTEM ONLINE</div>
-                    <div style="font-size: 0.9rem; color: var(--text-muted);" id="user-badge">Stanley (Admin)</div>
+                    <div class="status-badge">ONLINE</div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted);" id="user-badge">Stanley (Admin)</div>
                 </div>
             </div>
 
@@ -461,12 +453,12 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                     </div>
                 </div>
 
-                <div style="background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: 20px; padding: 24px; margin-top: 24px;">
-                    <h3>⚡ Quick Agent Actions</h3>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 6px;">Trigger autonomous system workflows directly.</p>
-                    <div style="display: flex; gap: 12px; margin-top: 16px;">
-                        <button class="btn-primary" style="width: auto; padding: 10px 20px;" onclick="quickAction('Log KES 500 for coffee')">Log Expense</button>
-                        <button class="btn-primary" style="width: auto; padding: 10px 20px; background: var(--indigo);" onclick="quickAction('What is my financial summary?')">Check Financial Summary</button>
+                <div class="table-wrapper">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 8px;">Quick Actions</h3>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Execute autonomous agent commands directly.</p>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn-secondary" onclick="quickAction('Log KES 500 for coffee')">Log Expense</button>
+                        <button class="btn-secondary" onclick="quickAction('What is my financial summary?')">Check Financial Summary</button>
                     </div>
                 </div>
             </div>
@@ -475,34 +467,34 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             <div id="tab-agent" class="tab-panel">
                 <div class="chat-container">
                     <div class="chat-messages" id="chat-box">
-                        <div class="msg-bubble msg-bot">Hello Stanley! I am StanlOS, your autonomous AI assistant. How can I help you manage your finances, tasks, or system today?</div>
+                        <div class="msg-bubble msg-bot">StanlOS Agent initialized. Ready to receive commands.</div>
                     </div>
                     <div class="chat-input-area">
-                        <input type="text" id="chat-input" class="form-input" placeholder="Type a message or instruction..." onkeydown="if(event.key==='Enter') sendAgentMessage()">
-                        <button class="btn-primary" style="width: auto; padding: 0 24px;" onclick="sendAgentMessage()">Send</button>
+                        <input type="text" id="chat-input" class="form-input" placeholder="Type instruction..." onkeydown="if(event.key==='Enter') sendAgentMessage()">
+                        <button class="btn-primary" style="width: auto; padding: 0 20px;" onclick="sendAgentMessage()">Execute</button>
                     </div>
                 </div>
             </div>
 
             <!-- FINANCE TAB -->
             <div id="tab-finance" class="tab-panel">
-                <div style="display: flex; gap: 20px; margin-bottom: 24px;">
-                    <div class="stat-card" style="flex:1;">
+                <div class="stats-grid" style="margin-bottom: 24px;">
+                    <div class="stat-card">
                         <div class="stat-label">Total Income</div>
-                        <div class="stat-value" style="color: var(--emerald);" id="fin-income">KES 0.00</div>
+                        <div class="stat-value" style="color: var(--accent-green);" id="fin-income">KES 0.00</div>
                     </div>
-                    <div class="stat-card" style="flex:1;">
-                        <div class="stat-label">Total Expenses</div>
-                        <div class="stat-value" style="color: var(--rose);" id="fin-expense">KES 0.00</div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Expense</div>
+                        <div class="stat-value" style="color: var(--accent-red);" id="fin-expense">KES 0.00</div>
                     </div>
-                    <div class="stat-card" style="flex:1;">
+                    <div class="stat-card">
                         <div class="stat-label">Net Balance</div>
                         <div class="stat-value" id="fin-net">KES 0.00</div>
                     </div>
                 </div>
 
-                <div style="background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: 20px; padding: 24px;">
-                    <h3>Logged MPESA & Financial Transactions</h3>
+                <div class="table-wrapper">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 16px;">Transaction History</h3>
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -523,20 +515,20 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
             <!-- MEDIA TAB -->
             <div id="tab-media" class="tab-panel">
-                <div style="background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: 20px; padding: 24px;">
-                    <h3>YouTube Songs & Audio Downloader</h3>
-                    <div style="display: flex; gap: 12px; margin-top: 16px;">
-                        <input type="text" id="yt-search-query" class="form-input" placeholder="Search song title e.g. Alan Walker Faded..." onkeydown="if(event.key==='Enter') searchYouTube()">
-                        <button class="btn-primary" style="width: auto; padding: 0 24px;" onclick="searchYouTube()">Search</button>
+                <div class="table-wrapper">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 12px;">YouTube Media Search</h3>
+                    <div style="display: flex; gap: 12px;">
+                        <input type="text" id="yt-search-query" class="form-input" placeholder="Song query e.g. Alan Walker Faded..." onkeydown="if(event.key==='Enter') searchYouTube()">
+                        <button class="btn-primary" style="width: auto; padding: 0 20px;" onclick="searchYouTube()">Search</button>
                     </div>
-                    <div id="yt-results" style="margin-top: 24px; display: flex; flex-direction: column; gap: 12px;"></div>
+                    <div id="yt-results" style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;"></div>
                 </div>
             </div>
 
             <!-- CRM TAB -->
             <div id="tab-contacts" class="tab-panel">
-                <div style="background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: 20px; padding: 24px;">
-                    <h3>Network Intelligence & CRM</h3>
+                <div class="table-wrapper">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 16px;">CRM Contacts</h3>
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -556,12 +548,12 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
             <!-- TASKS TAB -->
             <div id="tab-tasks" class="tab-panel">
-                <div style="background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: 20px; padding: 24px;">
-                    <h3>System Tasks & Workflow</h3>
+                <div class="table-wrapper">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 16px;">Tasks Board</h3>
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Task Title</th>
+                                <th>Title</th>
                                 <th>Priority</th>
                                 <th>Status</th>
                                 <th>Created</th>
@@ -577,14 +569,14 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
             <!-- MEMORY TAB -->
             <div id="tab-memory" class="tab-panel">
-                <div style="background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: 20px; padding: 24px;">
-                    <h3>Long-term Memory & User Facts</h3>
+                <div class="table-wrapper">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 16px;">System Memory</h3>
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Fact Key</th>
-                                <th>Fact Value</th>
-                                <th>Stored Date</th>
+                                <th>Key</th>
+                                <th>Value</th>
+                                <th>Date</th>
                             </tr>
                         </thead>
                         <tbody id="memory-table-body">
@@ -596,13 +588,13 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
             <!-- SETTINGS TAB -->
             <div id="tab-settings" class="tab-panel">
-                <div style="background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: 20px; padding: 24px;">
-                    <h3>System Configuration</h3>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 6px;">Live Environment Configuration</p>
-                    <div style="margin-top: 16px; font-family:'Fira Code', monospace; font-size:0.85rem; color:var(--primary);">
-                        <div>• Engine: FastAPI + Gunicorn UvicornWorker</div>
-                        <div>• Telegram Bot: @stanlosbot</div>
-                        <div>• AI Provider: Cloudflare Workers AI (Llama 3.1 8B)</div>
+                <div class="table-wrapper">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 12px;">System Configuration</h3>
+                    <div style="font-family:'Fira Code', monospace; font-size:0.85rem; color:var(--text-muted); display:flex; flex-direction:column; gap:8px;">
+                        <div>Engine: FastAPI / Gunicorn UvicornWorker</div>
+                        <div>Telegram Bot: @stanlosbot</div>
+                        <div>AI Model: Cloudflare Llama 3.1 8B</div>
+                        <div>Database: SQLite Cloud / Local SQLite</div>
                     </div>
                 </div>
             </div>
@@ -627,7 +619,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                     document.getElementById('login-modal').classList.add('hidden');
                     loadStats();
                 } else {
-                    document.getElementById('login-err').innerText = data.detail || 'Login failed.';
+                    document.getElementById('login-err').innerText = data.detail || 'Invalid username or password.';
                 }
             });
         }
@@ -642,7 +634,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
             el.classList.add('active');
             document.getElementById('tab-' + name).classList.add('active');
-            document.getElementById('tab-header-title').innerText = el.innerText;
+            document.getElementById('tab-header-title').innerText = el.innerText.trim();
             
             if(name === 'finance') loadFinance();
             if(name === 'contacts') loadContacts();
@@ -680,7 +672,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                         <td>${t.date}</td>
                     </tr>`;
                 });
-                document.getElementById('txn-table-body').innerHTML = html || '<tr><td colspan="6">No transactions found</td></tr>';
+                document.getElementById('txn-table-body').innerHTML = html || '<tr><td colspan="6">No transactions logged</td></tr>';
             });
         }
 
@@ -713,7 +705,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                         <td>Priority ${t.priority}</td>
                         <td>${t.status}</td>
                         <td>${t.created_at}</td>
-                        <td><button onclick="toggleTask(${t.id})" class="btn-primary" style="padding:4px 12px; font-size:0.75rem;">Toggle</button></td>
+                        <td><button onclick="toggleTask(${t.id})" class="btn-secondary">Toggle</button></td>
                     </tr>`;
                 });
                 document.getElementById('tasks-table-body').innerHTML = html || '<tr><td colspan="5">No tasks found</td></tr>';
@@ -788,12 +780,12 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             .then(d => {
                 let html = '';
                 d.results.forEach(t => {
-                    html += `<div style="background:rgba(30,41,59,0.5); padding:16px; border-radius:12px; display:flex; justify-content:space-between; align-items:center;">
+                    html += `<div style="background:var(--bg-black); border:1px solid var(--border); padding:14px; display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <div style="font-weight:600;">${t.title}</div>
                             <div style="font-size:0.8rem; color:var(--text-muted);">${t.uploader} • ${t.duration_string}</div>
                         </div>
-                        <a href="${t.webpage_url}" target="_blank" class="btn-primary" style="width:auto; padding:8px 16px; text-decoration:none; font-size:0.85rem;">View Track</a>
+                        <a href="${t.webpage_url}" target="_blank" class="btn-secondary" style="text-decoration:none;">View Link</a>
                     </div>`;
                 });
                 res.innerHTML = html || 'No tracks found.';
