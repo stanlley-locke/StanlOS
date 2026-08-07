@@ -2,31 +2,31 @@ import html
 from datetime import datetime
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-# Modern Premium UI Symbols & Badges
+# Clean Minimalist UI Symbols
 SYMBOLS = {
-    "finance": "💳",
-    "academic": "📚",
-    "notes": "📇",
-    "devops": "⚙️",
-    "settings": "⚙️",
-    "help": "❓",
-    "ai": "🤖",
-    "alert": "⚠️",
-    "success": "✅",
-    "time": "🕒",
-    "stats": "📊",
-    "knowledge": "🧠",
-    "media": "🎬",
-    "game": "🎮",
-    "weather": "🌤️",
-    "calc": "🧮",
-    "memory": "💾",
+    "finance": "•",
+    "academic": "•",
+    "notes": "•",
+    "devops": "•",
+    "settings": "•",
+    "help": "•",
+    "ai": "•",
+    "alert": "[!]",
+    "success": "[OK]",
+    "time": "•",
+    "stats": "•",
+    "knowledge": "•",
+    "media": "•",
+    "game": "•",
+    "weather": "•",
+    "calc": "•",
+    "memory": "•",
     "bullet": "•",
     "arrow": "➔",
-    "star": "⭐",
-    "user": "👤",
-    "money_in": "📈",
-    "money_out": "📉"
+    "star": "★",
+    "user": "•",
+    "money_in": "(+)",
+    "money_out": "(-)"
 }
 
 def safe_html(text: str) -> str:

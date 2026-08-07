@@ -178,3 +178,67 @@ async def cmd_memory(message: Message):
     facts = await recall_fact(user_id)
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
     await message.answer(f"<b>🧠 STORED PERSONAL FACTS</b>\n\n{facts}", reply_markup=kb)
+
+@router.message(Command("convert"))
+async def cmd_convert(message: Message):
+    parts = message.text.split()
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
+    if len(parts) >= 4:
+        from app.agent.tools import currency_converter
+        amt = parts[1]
+        fc = parts[2]
+        tc = parts[3]
+        res = await currency_converter(amt, fc, tc)
+        await message.answer(f"<b>CURRENCY CONVERTER</b>\n\n{res}", reply_markup=kb)
+    else:
+        await message.answer(
+            "<b>CURRENCY CONVERTER</b>\n\nUsage: <code>/convert &lt;amount&gt; &lt;from&gt; &lt;to&gt;</code>\nExample: <code>/convert 100 USD KES</code>",
+            reply_markup=kb
+        )
+
+@router.message(Command("crypto"))
+async def cmd_crypto(message: Message):
+    parts = message.text.split()
+    sym = parts[1] if len(parts) > 1 else "BTC"
+    from app.agent.tools import crypto_tracker
+    res = await crypto_tracker(sym)
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
+    await message.answer(f"<b>CRYPTO MARKET LOOKUP</b>\n\n{res}", reply_markup=kb)
+
+@router.message(Command("translate"))
+async def cmd_translate(message: Message):
+    parts = message.text.split(maxsplit=2)
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
+    if len(parts) >= 3:
+        target_lang = parts[1]
+        text_to_translate = parts[2]
+        from app.agent.tools import translate_text
+        res = await translate_text(text_to_translate, target_lang)
+        await message.answer(f"<b>AI TRANSLATOR ({target_lang.upper()})</b>\n\n{res}", reply_markup=kb)
+    else:
+        await message.answer(
+            "<b>AI TRANSLATOR</b>\n\nUsage: <code>/translate &lt;language&gt; &lt;text&gt;</code>\nExample: <code>/translate Swahili Good morning friend</code>",
+            reply_markup=kb
+        )
+
+@router.message(Command("wiki"))
+async def cmd_wiki(message: Message):
+    parts = message.text.split(maxsplit=1)
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
+    if len(parts) > 1:
+        from app.agent.tools import wiki_search
+        res = await wiki_search(parts[1])
+        await message.answer(f"<b>WIKIPEDIA SEARCH</b>\n\n{res}", reply_markup=kb)
+    else:
+        await message.answer(
+            "<b>WIKIPEDIA SEARCH</b>\n\nUsage: <code>/wiki &lt;concept&gt;</code>\nExample: <code>/wiki Artificial Intelligence</code>",
+            reply_markup=kb
+        )
+
+@router.message(Command("clear_tasks"))
+async def cmd_clear_tasks(message: Message):
+    user_id = message.from_user.id
+    from app.agent.tools import clear_tasks
+    res = await clear_tasks(user_id)
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
+    await message.answer(f"<b>TASK LIST WIPED</b>\n\n{res}", reply_markup=kb)
