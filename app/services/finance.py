@@ -20,23 +20,27 @@ class FinanceService:
         code_match = re.search(r'\b([A-Z0-9]{10,12})\b', sms_clean)
         txn_code = code_match.group(1) if code_match else None
 
-        # 2. Strict Deduplication Check
-        if txn_code:
-            existing = await db.execute("SELECT id FROM transactions WHERE transaction_code = ? AND user_id = ?", (txn_code, user_id), fetch=True)
-            if existing:
-                logger.info(f"Transaction code {txn_code} already logged for user {user_id}. Skipping duplicate.")
-                return {"is_duplicate": True, "transaction_code": txn_code}
-
-        # 3. Amount Extraction (Handles Ksh, Ksh., KES, $)
+        # 2. Amount Extraction (Handles Ksh, Ksh., KES, $)
         amt_pattern = r'(?:Ksh|KES|\$)\.?\s*([\d,]+(?:\.\d+)?)'
-        amt_match = re.search(r'(?:Ksh|KES|\$)\.?\s*([\d,]+(?:\.\d+)?)\s*(?:sent to|paid to|received|deposited|debited|credited|withdrawn|invested)', sms_clean, re.IGNORECASE)
+        amt_match = re.search(r'(?:Ksh|KES|\$)\.?\s*([\d,]+(?:\.\d+)?)\s*(?:sent to|paid to|received|deposited|debited|credited|withdrawn|invested|confirmed|bought)', sms_clean, re.IGNORECASE)
         if not amt_match:
             amt_match = re.search(amt_pattern, sms_clean, re.IGNORECASE)
         amount = float(amt_match.group(1).replace(',', '')) if amt_match else 0.0
 
-        if amount <= 0.0 and not txn_code:
-            logger.info("SMS has zero amount and no transaction code. Skipping non-transaction.")
+        # 3. Strict Financial Transaction Validation:
+        # A legitimate transaction MUST have a valid transaction code AND a positive amount AND confirmation context
+        confirm_keywords = ["confirmed", "sent to", "paid to", "received", "deposited", "debited", "credited", "withdrawn", "bought", "ksh", "kes", "transfer"]
+        has_confirmation = any(kw in sms_clean.lower() for kw in confirm_keywords)
+
+        if not txn_code or not has_confirmation or amount <= 0.0:
+            logger.info(f"Skipping non-transactional or promotional SMS. Code: {txn_code}, Amount: {amount}")
             return None
+
+        # 4. Strict Deduplication Check
+        existing = await db.execute("SELECT id FROM transactions WHERE transaction_code = ? AND user_id = ?", (txn_code, user_id), fetch=True)
+        if existing:
+            logger.info(f"Transaction code {txn_code} already logged for user {user_id}. Skipping duplicate.")
+            return {"is_duplicate": True, "transaction_code": txn_code}
 
         # 4. Vendor Extraction
         vendor_match = re.search(r'(?:sent to|paid to|received from|from)\s+([A-Za-z0-9\s._-]+?)(?:\s+on|\s+at|\.|\$|New)', sms_clean, re.IGNORECASE)
