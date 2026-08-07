@@ -23,15 +23,19 @@ async def handle_text_message(message: Message):
     """
     Handle generic text messages using the autonomous Agent Executor.
     """
-    user_text = message.text
+    user_text = message.text.strip()
     
-    status_msg = await message.answer(f"⚡ <b>STANLOS AGENT STATUS</b>\n\n<b>Thought :</b> <i>Initializing request context...</i>")
+    # Ignore slash commands so they don't trigger AI agent loop
+    if user_text.startswith('/'):
+        return
+    
+    status_msg = await message.answer("<b>StanlOS Agent</b>\n\n<i>Processing request...</i>")
     
     async def status_callback(status: str):
         try:
-            await status_msg.edit_text(status)
-            await asyncio.sleep(0.5) # Prevent Telegram flood limits
-        except Exception as e:
+            await status_msg.edit_text(f"<b>StanlOS Agent</b>\n\n<i>{status}</i>")
+            await asyncio.sleep(0.4)
+        except Exception:
             pass
             
     final_response = await agent.run(user_text, user_id=message.from_user.id, status_callback=status_callback)
@@ -43,6 +47,6 @@ async def handle_text_message(message: Message):
     
     if final_response:
         clean_response = safe_html(final_response)
-        await message.reply(f"🤖 <b>AGENT RESPONSE</b>\n\n{clean_response}")
+        await message.reply(f"<b>Agent Response:</b>\n\n{clean_response}")
     else:
-        await message.reply(f"{SYMBOLS['alert']} System Error: AI backend offline or unresponsive.")
+        await message.reply("System Error: AI backend offline or unresponsive.")

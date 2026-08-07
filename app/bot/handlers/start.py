@@ -98,32 +98,36 @@ async def cb_settings(cb: CallbackQuery):
     ])
     await cb.message.edit_text(text, reply_markup=kb)
 
+@router.message(Command("help"))
 @router.callback_query(F.data == "menu:help")
-async def cb_help(cb: CallbackQuery):
+async def cmd_help(event: Message | CallbackQuery):
     text = (
-        f"<b>📖 STANLOS COMMAND REFERENCE</b>\n\n"
-        f"<b>📚 Academic & Tasks:</b>\n"
-        f"{SYMBOLS['bullet']} /tasks - View pending task list\n"
-        f"{SYMBOLS['bullet']} /assign - Add new assignment/task\n\n"
-        f"<b>💳 Finance & Expenses:</b>\n"
-        f"{SYMBOLS['bullet']} /finance - Financial summary\n"
-        f"{SYMBOLS['bullet']} /expense &lt;details&gt; - Log expense manually\n"
-        f"{SYMBOLS['bullet']} /summary - View category breakdown\n\n"
-        f"<b>🧠 Memory & Knowledge (RAG):</b>\n"
-        f"{SYMBOLS['bullet']} /note &lt;text&gt; - Commit note to RAG database\n"
-        f"{SYMBOLS['bullet']} /find &lt;query&gt; - Perform semantic vector search\n\n"
-        f"<b>📇 Network Intelligence (CRM):</b>\n"
-        f"{SYMBOLS['bullet']} /contact &lt;name, details&gt; - Record new contact\n"
-        f"{SYMBOLS['bullet']} /network - View contact database\n\n"
-        f"<b>🎬 Media & Documents:</b>\n"
-        f"{SYMBOLS['bullet']} /yt &lt;url&gt; - Download audio from YouTube\n"
-        f"{SYMBOLS['bullet']} <i>Send any PDF</i> - Extract text & index into RAG memory\n\n"
-        f"<b>🎮 Gamification & Trivia:</b>\n"
-        f"{SYMBOLS['bullet']} /trivia &lt;topic&gt; - Challenge AI quiz\n"
-        f"{SYMBOLS['bullet']} /checkin - Claim daily points bonus\n\n"
-        f"<b>⚙️ System Admin:</b>\n"
-        f"{SYMBOLS['bullet']} /devops or /stats - View server CPU/RAM utilization\n"
-        f"{SYMBOLS['bullet']} /health - Subsystem connectivity test"
+        f"<b>StanlOS Command Reference</b>\n\n"
+        f"• <b>Tasks:</b> /tasks, /assign &lt;title&gt;, /clear_tasks\n"
+        f"• <b>Finance:</b> /finance, /expense &lt;amt vendor&gt;, /income &lt;amt source&gt;, /summary, /history\n"
+        f"• <b>Tools:</b> /convert 100 USD KES, /crypto BTC, /translate Swahili text, /wiki concept\n"
+        f"• <b>Memory:</b> /note &lt;text&gt;, /find &lt;query&gt;, /memory\n"
+        f"• <b>CRM:</b> /contact &lt;name&gt;, /network\n"
+        f"• <b>Media:</b> /yt &lt;url&gt; (YouTube/TikTok), PDF upload\n"
+        f"• <b>System:</b> /devops, /stats, /help"
+    )
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]
+    ])
+    if isinstance(event, Message):
+        await event.answer(text, reply_markup=kb)
+    else:
+        await event.message.edit_text(text, reply_markup=kb)
+
+@router.callback_query(F.data == "menu:tools")
+async def cb_tools(cb: CallbackQuery):
+    text = (
+        f"<b>Tools & Utilities Hub</b>\n\n"
+        f"• <b>FX Converter:</b> <code>/convert 100 USD KES</code>\n"
+        f"• <b>Crypto Market:</b> <code>/crypto BTC</code> or <code>/crypto ETH</code>\n"
+        f"• <b>AI Translator:</b> <code>/translate Swahili Good morning</code>\n"
+        f"• <b>Wikipedia Lookup:</b> <code>/wiki Quantum Computing</code>\n"
+        f"• <b>Math Calculator:</b> <code>/calc 1500 * 0.16</code>"
     )
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]
