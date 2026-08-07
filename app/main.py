@@ -20,6 +20,12 @@ import asyncio
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting StanlOS...")
+    try:
+        loop = asyncio.get_running_loop()
+        asyncio.set_event_loop(loop)
+    except Exception:
+        pass
+
     await db.initialize_schema()
     await userbot_service.start()
     await set_bot_commands()
@@ -35,7 +41,10 @@ async def lifespan(app: FastAPI):
     
     logger.info("Shutting down StanlOS...")
     if polling_task:
-        await dp.stop_polling()
+        try:
+            await dp.stop_polling()
+        except Exception:
+            pass
         polling_task.cancel()
     await delete_webhook()
     await userbot_service.stop()

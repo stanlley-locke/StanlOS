@@ -17,6 +17,12 @@ class UserbotService:
             logger.warning("Userbot not started: API_ID or API_HASH missing.")
             return
 
+        try:
+            loop = asyncio.get_running_loop()
+            asyncio.set_event_loop(loop)
+        except Exception:
+            pass
+
         if settings.PYROGRAM_SESSION_STRING:
             self.app = Client(
                 "my_account",
