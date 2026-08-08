@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 
 from app.core.config import settings
 from app.core.database import db
-from app.utils.formatters import format_dashboard, build_main_menu_kb, SYMBOLS
+from app.utils.formatters import format_dashboard, build_main_menu_kb, SYMBOLS, build_sub_menu_kb
 
 router = Router()
 logger = logging.getLogger(__name__)
