@@ -629,6 +629,34 @@ async def get_stock_price(symbol: str) -> str:
     except Exception as e:
         return f"Stock lookup error: {e}"
 
+@registry.register("get_nse_stock_price", "Fetches live stock market price for the Nairobi Securities Exchange (NSE Kenya). Pass the symbol (e.g., SCOM, EQTY, KCB). Requires 'symbol' (string).")
+async def get_nse_stock_price(symbol: str) -> str:
+    import aiohttp
+    try:
+        sym = symbol.strip().upper()
+        # Remove any NSEKE: prefix if provided by the LLM
+        if sym.startswith("NSEKE:"):
+            sym = sym.replace("NSEKE:", "")
+        url = "https://scanner.tradingview.com/kenya/scan"
+        payload = {
+            "symbols": {"tickers": [f"NSEKE:{sym}"]},
+            "columns": ["close", "description", "change"]
+        }
+        headers = {"User-Agent": "Mozilla/5.0"}
+        async with aiohttp.ClientSession(headers=headers) as session:
+            async with session.post(url, json=payload, timeout=5) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    if data.get("totalCount", 0) > 0:
+                        d = data["data"][0]["d"]
+                        price = d[0]
+                        desc = d[1]
+                        change = d[2]
+                        return f"NSE Stock: {sym} ({desc})\nPrice: KES {price}\nDay Change: {change}%"
+                return f"Could not fetch NSE stock price for {sym}. Invalid symbol or delisted."
+    except Exception as e:
+        return f"NSE Stock lookup error: {e}"
+
 @registry.register("fetch_github_trending", "Fetches top trending GitHub repositories. Requires 'language' (string, optional, default 'python').")
 async def fetch_github_trending(language: str = "python") -> str:
     import aiohttp
