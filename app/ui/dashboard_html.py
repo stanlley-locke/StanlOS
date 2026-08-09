@@ -497,9 +497,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 <li class="nav-item" onclick="switchTab('userbot', this)"><i class="fa-solid fa-paper-plane"></i> Userbot Controller</li>
 
                 <div class="nav-section-title">Utilities & Workload</div>
+                <li class="nav-item" onclick="switchTab('gamification', this)"><i class="fa-solid fa-trophy"></i> Gamification & XP</li>
                 <li class="nav-item" onclick="switchTab('media', this)"><i class="fa-solid fa-download"></i> Media & TikTok Hub</li>
                 <li class="nav-item" onclick="switchTab('tools', this)"><i class="fa-solid fa-wrench"></i> Tools & Utilities</li>
                 <li class="nav-item" onclick="switchTab('tasks', this)"><i class="fa-solid fa-check-square"></i> Tasks Board</li>
+                <li class="nav-item" onclick="switchTab('apps', this)"><i class="fa-solid fa-cubes"></i> Connected Apps</li>
 
                 <div class="nav-section-title">System Admin</div>
                 <li class="nav-item" onclick="switchTab('settings', this)"><i class="fa-solid fa-sliders"></i> System Config</li>
@@ -772,29 +774,106 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- MEMORY TAB -->
-            <div id="tab-memory" class="tab-panel">
-                <div class="table-wrapper">
-                    <h3 style="font-size: 1.05rem; margin-bottom: 16px;">System Memory & Facts</h3>
-                    
-                    <div class="form-grid-inline">
-                        <input type="text" id="m-key" class="form-input" placeholder="Fact Key e.g. favorite_food">
-                        <input type="text" id="m-val" class="form-input" placeholder="Fact Value e.g. Pizza">
+            <!-- GAMIFICATION TAB -->
+            <div id="tab-gamification" class="tab-panel">
+                <div class="grid-2">
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.05rem; margin-bottom: 16px;">Admin Gamification Profile</h3>
+                        <div style="background:var(--bg-dark); padding:20px; border:1px solid var(--border); text-align:center; margin-bottom:16px;">
+                            <div style="font-size:3rem; margin-bottom:10px;">🏆</div>
+                            <h2 id="g-name" style="font-size:1.4rem; margin-bottom:5px;">Admin</h2>
+                            <div style="color:var(--text-muted); font-size:0.9rem; margin-bottom:15px;">Level <span id="g-level" style="color:var(--accent-amber); font-weight:bold;">1</span></div>
+                            <div style="font-size:2rem; font-weight:bold; font-family:'Fira Code', monospace; color:var(--primary-blue);" id="g-points">0 PTS</div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-muted); margin-bottom:5px;">
+                            <span>Progress to Next Level</span>
+                            <span id="g-next-tier">0 / 100 PTS</span>
+                        </div>
+                        <div class="progress-bar-bg" style="height:12px;">
+                            <div class="progress-bar-fill" id="g-progress" style="width: 0%; background:var(--accent-amber);"></div>
+                        </div>
                     </div>
-                    <button class="btn-primary" style="margin-bottom: 16px;" onclick="addMemory()">Store Memory</button>
 
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.05rem; margin-bottom: 16px;">Global Leaderboard</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Player</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboard-table-body">
+                                <tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Loading leaderboard...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- APPS TAB -->
+            <div id="tab-apps" class="tab-panel">
+                <div class="table-wrapper">
+                    <h3 style="font-size: 1.05rem; margin-bottom: 16px;">Connected Integrations</h3>
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Key</th>
-                                <th>Value</th>
-                                <th>Date</th>
+                                <th>App ID</th>
+                                <th>Auth Type</th>
+                                <th>Status</th>
+                                <th>Connected On</th>
                             </tr>
                         </thead>
-                        <tbody id="memory-table-body">
-                            <tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Loading memories...</td></tr>
+                        <tbody id="apps-table-body">
+                            <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Loading apps...</td></tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- MEMORY TAB -->
+            <div id="tab-memory" class="tab-panel">
+                <div class="grid-2">
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.05rem; margin-bottom: 16px;">System Memory & Facts</h3>
+                        
+                        <div class="form-grid-inline">
+                            <input type="text" id="m-key" class="form-input" placeholder="Fact Key e.g. favorite_food">
+                            <input type="text" id="m-val" class="form-input" placeholder="Fact Value e.g. Pizza">
+                        </div>
+                        <button class="btn-primary" style="margin-bottom: 16px;" onclick="addMemory()">Store Memory</button>
+
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Key</th>
+                                    <th>Value</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="memory-table-body">
+                                <tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Loading memories...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.05rem; margin-bottom: 16px;">RAG Documents</h3>
+                        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;">Files and scraped web pages indexed by the AI for semantic search.</p>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>File Name</th>
+                                    <th>Type</th>
+                                    <th>Indexed On</th>
+                                </tr>
+                            </thead>
+                            <tbody id="documents-table-body">
+                                <tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Loading documents...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -951,7 +1030,68 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             if(name === 'userbot') loadUserbotStatus();
             if(name === 'contacts') loadContacts();
             if(name === 'tasks') loadTasks();
-            if(name === 'memory') loadMemory();
+            if(name === 'memory') { loadMemory(); loadDocuments(); }
+            if(name === 'gamification') loadGamification();
+            if(name === 'apps') loadApps();
+        }
+
+        function loadGamification() {
+            fetch('/api/gamification/profile')
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById('g-name').innerText = d.name;
+                document.getElementById('g-level').innerText = d.level;
+                document.getElementById('g-points').innerText = d.points + ' PTS';
+                document.getElementById('g-next-tier').innerText = d.points + ' / ' + d.next_tier_pts + ' PTS';
+                document.getElementById('g-progress').style.width = d.progress_pct + '%';
+            });
+
+            fetch('/api/gamification/leaderboard')
+            .then(r => r.json())
+            .then(d => {
+                let html = '';
+                d.leaderboard.forEach(l => {
+                    html += `<tr>
+                        <td><b>#${l.rank}</b></td>
+                        <td>${l.name}</td>
+                        <td><code style="color:var(--primary-blue);">${l.points} PTS</code></td>
+                    </tr>`;
+                });
+                document.getElementById('leaderboard-table-body').innerHTML = html || '<tr><td colspan="3">No players found</td></tr>';
+            });
+        }
+
+        function loadApps() {
+            fetch('/api/apps')
+            .then(r => r.json())
+            .then(d => {
+                let html = '';
+                d.forEach(a => {
+                    html += `<tr>
+                        <td><b>${a.app_id}</b></td>
+                        <td>${a.auth_type || 'None'}</td>
+                        <td><span class="status-badge" style="border:none; padding:2px 6px;">${a.status}</span></td>
+                        <td>${a.created_at}</td>
+                    </tr>`;
+                });
+                document.getElementById('apps-table-body').innerHTML = html || '<tr><td colspan="4" style="text-align:center;">No apps connected</td></tr>';
+            });
+        }
+
+        function loadDocuments() {
+            fetch('/api/documents')
+            .then(r => r.json())
+            .then(d => {
+                let html = '';
+                d.forEach(doc => {
+                    html += `<tr>
+                        <td><b>${doc.file_name}</b></td>
+                        <td><span class="tag tag-expense" style="border-color:var(--primary-blue); color:var(--primary-blue);">${doc.file_type}</span></td>
+                        <td>${doc.created_at}</td>
+                    </tr>`;
+                });
+                document.getElementById('documents-table-body').innerHTML = html || '<tr><td colspan="3" style="text-align:center;">No documents uploaded</td></tr>';
+            });
         }
 
         function loadFinance() {

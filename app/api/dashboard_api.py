@@ -436,3 +436,74 @@ async def admin_purge_cache_api():
         except Exception:
             pass
     return {"success": True, "message": f"Cleared {count} temporary files from storage downloads."}
+
+@router.get("/gamification/profile")
+async def get_gamification_profile():
+    admin_id = settings.ADMIN_IDS[0] if settings.ADMIN_IDS else 0
+    user_data = await db.execute("SELECT points, full_name, username FROM users WHERE tg_id = ?", (admin_id,), fetch=True)
+    points = user_data[0][0] if user_data and user_data[0][0] is not None else 0
+    name = user_data[0][1] if user_data and user_data[0][1] else (user_data[0][2] if user_data and user_data[0][2] else "Admin")
+    
+    level = (points // 100) + 1
+    next_tier_pts = level * 100
+    progress_pct = min(100, round((points % 100) / 100 * 100, 1))
+    
+    return {
+        "success": True,
+        "name": name,
+        "points": points,
+        "level": level,
+        "next_tier_pts": next_tier_pts,
+        "progress_pct": progress_pct
+    }
+
+@router.get("/gamification/leaderboard")
+async def get_gamification_leaderboard():
+    top_users = await db.execute("SELECT full_name, username, points FROM users ORDER BY points DESC LIMIT 10", fetch=True)
+    res = []
+    if top_users:
+        for idx, u in enumerate(top_users):
+            fname, uname, pts = u
+            name = fname or (f"@{uname}" if uname else "Anonymous")
+            res.append({
+                "rank": idx + 1,
+                "name": name,
+                "points": pts or 0
+            })
+    return {"success": True, "leaderboard": res}
+
+@router.get("/documents")
+async def get_documents():
+    docs = await db.execute(
+        "SELECT id, file_name, file_type, metadata_json, created_at FROM documents ORDER BY id DESC LIMIT 50",
+        fetch=True
+    )
+    res = []
+    if docs:
+        for d in docs:
+            res.append({
+                "id": d[0],
+                "file_name": d[1],
+                "file_type": d[2],
+                "metadata": d[3],
+                "created_at": str(d[4])
+            })
+    return res
+
+@router.get("/apps")
+async def get_apps():
+    apps = await db.execute(
+        "SELECT id, app_id, auth_type, status, created_at FROM user_apps ORDER BY id DESC LIMIT 50",
+        fetch=True
+    )
+    res = []
+    if apps:
+        for a in apps:
+            res.append({
+                "id": a[0],
+                "app_id": a[1],
+                "auth_type": a[2],
+                "status": a[3],
+                "created_at": str(a[4])
+            })
+    return res
