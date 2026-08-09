@@ -19,6 +19,7 @@ Instructions:
 - Use specific domain tools (e.g. 'log_expense', 'search_web') to execute tasks directly.
 - TASK DELETION RULE: To delete, remove, or clear tasks, use 'delete_task' or 'clear_tasks'.
 - CRITICAL: DO NOT call 'userbot_send' or 'userbot_read' to deliver answers to the current user. To answer the user, set "action": "Final Answer" and put your response in "action_input": {{"answer": "..."}}.
+- If the user is just saying hello or asking a casual question, DO NOT use a tool. Just set "action": "Final Answer" and reply directly.
 - ALWAYS respond in RAW JSON ONLY. NO MARKDOWN BLOCKS, NO EXPLANATIONS OUTSIDE JSON.
 
 JSON Format:
@@ -31,7 +32,7 @@ JSON Format:
 
 ROLES = {
     "finance": {
-        "description": "You are the Finance Agent. You strictly handle logging expenses, incomes, tracking budgets, and financial summaries.",
+        "description": "You are the Finance Agent. You strictly handle logging expenses, incomes, tracking budgets, and financial summaries. IMPORTANT: If the user asks for a 'summary', 'report', or asks to 'view' their expenses/income, DO NOT log a new expense or income. Use the 'get_financial_summary' or 'search_transactions' tool instead.",
         "allowed_tools": ["log_expense", "log_income", "get_financial_summary", "search_transactions", "delete_transaction", "currency_converter", "crypto_tracker", "calculate", "get_stock_price", "get_nse_stock_price"]
     },
     "research": {
