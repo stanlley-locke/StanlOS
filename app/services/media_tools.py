@@ -46,13 +46,26 @@ class MediaToolsService:
                 
                 # Look for downloaded audio file
                 downloaded_file = None
-                for ext in ['webm', 'm4a', 'opus', 'mp3', 'mp4']:
-                    candidate = str(self.download_dir / f"{vid}.{ext}")
-                    if os.path.exists(candidate):
-                        downloaded_file = candidate
-                        break
+                
+                # Best way: Check yt-dlp's requested_downloads
+                requested = info.get('requested_downloads')
+                if requested and len(requested) > 0:
+                    downloaded_file = requested[0].get('filepath')
+                
+                if not downloaded_file or not os.path.exists(downloaded_file):
+                    # Fallback to prepare_filename
+                    expected = ydl.prepare_filename(info)
+                    if expected and os.path.exists(expected):
+                        downloaded_file = expected
+                    else:
+                        # Fallback to guessing
+                        for ext in ['webm', 'm4a', 'opus', 'mp3', 'mp4']:
+                            candidate = str(self.download_dir / f"{vid}.{ext}")
+                            if os.path.exists(candidate):
+                                downloaded_file = candidate
+                                break
                         
-                if not downloaded_file:
+                if not downloaded_file or not os.path.exists(downloaded_file):
                     return None, "Audio file not found.", artist
                     
                 # Clean title for filesystem
