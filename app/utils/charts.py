@@ -1,4 +1,6 @@
 import io
+import matplotlib
+matplotlib.use('Agg') # MUST be called before pyplot
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from aiogram.types import BufferedInputFile
