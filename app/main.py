@@ -52,7 +52,6 @@ async def lifespan(app: FastAPI):
         except Exception:
             pass
         polling_task.cancel()
-    await delete_webhook()
     scheduler_service.stop()
     await userbot_service.stop()
     await db.stop_keep_alive()
