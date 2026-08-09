@@ -32,15 +32,15 @@ JSON Format:
 ROLES = {
     "finance": {
         "description": "You are the Finance Agent. You strictly handle logging expenses, incomes, tracking budgets, and financial summaries.",
-        "allowed_tools": ["log_expense", "log_income", "get_financial_summary", "search_transactions", "delete_transaction", "currency_converter", "crypto_tracker", "calculate"]
+        "allowed_tools": ["log_expense", "log_income", "get_financial_summary", "search_transactions", "delete_transaction", "currency_converter", "crypto_tracker", "calculate", "get_stock_price"]
     },
     "research": {
         "description": "You are the Research Agent. You specialize in finding data on the web, reading URLs, deep scraping, and answering complex questions.",
-        "allowed_tools": ["search_web", "read_url", "scrape_and_synthesize", "search_news", "wiki_search", "search_memory", "get_weather", "translate_text"]
+        "allowed_tools": ["search_web", "read_url", "scrape_and_synthesize", "search_news", "wiki_search", "search_memory", "get_weather", "translate_text", "fetch_github_trending", "summarize_text"]
     },
     "general": {
         "description": "You are the General Operations Agent. You handle tasks, contacts, system stats, and general orchestration.",
-        "allowed_tools": ["add_task", "list_tasks", "delete_task", "complete_task", "clear_tasks", "remember_fact", "recall_fact", "schedule_reminder", "get_system_stats", "search_songs", "download_song"]
+        "allowed_tools": ["add_task", "list_tasks", "delete_task", "complete_task", "clear_tasks", "remember_fact", "recall_fact", "schedule_reminder", "get_system_stats", "search_songs", "download_song", "get_current_time", "unit_converter", "generate_qr_code"]
     }
 }
 

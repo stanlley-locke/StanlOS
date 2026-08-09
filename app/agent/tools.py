@@ -560,6 +560,113 @@ async def schedule_reminder(user_id: int | str, message: str, delay_minutes: int
     except Exception as e:
         return f"Failed to schedule reminder: {e}"
 
+@registry.register("get_current_time", "Gets the exact current date, time, and day of the week. No arguments required.")
+async def get_current_time() -> str:
+    from datetime import datetime
+    now = datetime.now()
+    return f"Current Date and Time: {now.strftime('%Y-%m-%d %H:%M:%S')} ({now.strftime('%A')})"
+
+@registry.register("unit_converter", "Converts basic units (e.g., km to mi, c to f, kg to lbs). Requires 'value' (float), 'from_unit' (string), and 'to_unit' (string).")
+async def unit_converter(value: float | str, from_unit: str, to_unit: str) -> str:
+    try:
+        val = float(value)
+        f_u = from_unit.strip().lower()
+        t_u = to_unit.strip().lower()
+        
+        # Temperature
+        if f_u in ['c', 'celsius'] and t_u in ['f', 'fahrenheit']:
+            return f"{val}°C = {(val * 9/5) + 32}°F"
+        elif f_u in ['f', 'fahrenheit'] and t_u in ['c', 'celsius']:
+            return f"{val}°F = {(val - 32) * 5/9}°C"
+            
+        # Distance
+        if f_u in ['km', 'kilometers'] and t_u in ['mi', 'miles']:
+            return f"{val} km = {val * 0.621371} miles"
+        elif f_u in ['mi', 'miles'] and t_u in ['km', 'kilometers']:
+            return f"{val} miles = {val / 0.621371} km"
+            
+        # Weight
+        if f_u in ['kg', 'kilograms'] and t_u in ['lb', 'lbs', 'pounds']:
+            return f"{val} kg = {val * 2.20462} lbs"
+        elif f_u in ['lb', 'lbs', 'pounds'] and t_u in ['kg', 'kilograms']:
+            return f"{val} lbs = {val / 2.20462} kg"
+            
+        return f"Unsupported conversion: {from_unit} to {to_unit}"
+    except Exception as e:
+        return f"Unit conversion error: {e}"
+
+@registry.register("generate_qr_code", "Generates a QR code image from text or a URL and sends it to the user. Requires 'user_id' (int) and 'data' (string).")
+async def generate_qr_code(user_id: int | str, data: str) -> str:
+    from app.bot.dispatcher import bot
+    import urllib.parse
+    try:
+        uid = int(user_id)
+        encoded_data = urllib.parse.quote(data)
+        qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={encoded_data}"
+        await bot.send_photo(chat_id=uid, photo=qr_url, caption=f"QR Code for: {data}")
+        return f"Successfully generated and sent QR code to user for data: {data}"
+    except Exception as e:
+        return f"QR code generation failed: {e}"
+
+@registry.register("get_stock_price", "Fetches live stock market price for a given ticker symbol (e.g., AAPL, TSLA). Requires 'symbol' (string).")
+async def get_stock_price(symbol: str) -> str:
+    import aiohttp
+    try:
+        sym = symbol.strip().upper()
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}"
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        async with aiohttp.ClientSession(headers=headers) as session:
+            async with session.get(url, timeout=5) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    res = data.get("chart", {}).get("result", [])
+                    if res:
+                        meta = res[0].get("meta", {})
+                        price = meta.get("regularMarketPrice")
+                        currency = meta.get("currency", "USD")
+                        return f"Stock Price for {sym}: {price} {currency}"
+                return f"Could not fetch stock price for {sym}. Invalid symbol or API error."
+    except Exception as e:
+        return f"Stock lookup error: {e}"
+
+@registry.register("fetch_github_trending", "Fetches top trending GitHub repositories. Requires 'language' (string, optional, default 'python').")
+async def fetch_github_trending(language: str = "python") -> str:
+    import aiohttp
+    import datetime
+    try:
+        lang = language.strip().lower()
+        # Get repos created in the last 7 days
+        last_week = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime('%Y-%m-%d')
+        url = f"https://api.github.com/search/repositories?q=language:{lang}+created:>{last_week}&sort=stars&order=desc"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, timeout=5) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    items = data.get("items", [])
+                    if not items:
+                        return f"No trending {lang} repos found recently."
+                    
+                    res_lines = [f"Trending {lang.capitalize()} GitHub Repositories:"]
+                    for repo in items[:5]:
+                        res_lines.append(f"- {repo['full_name']} ({repo['stargazers_count']} ⭐️): {repo['description']} | URL: {repo['html_url']}")
+                    return "\n".join(res_lines)
+                return f"GitHub API error: {resp.status}"
+    except Exception as e:
+        return f"GitHub trending error: {e}"
+
+@registry.register("summarize_text", "Summarizes a large block of text. Requires 'text' (string).")
+async def summarize_text(text: str) -> str:
+    from app.services.ai_cloudflare import ai_client
+    try:
+        messages = [
+            {"role": "system", "content": "You are a summarization assistant. Provide a concise, highly accurate summary of the following text."},
+            {"role": "user", "content": text[:8000]} # Limit to 8000 chars to avoid payload too large
+        ]
+        summary = await ai_client.generate_text(messages)
+        return f"Summary:\n{summary}"
+    except Exception as e:
+        return f"Summarization error: {e}"
+
 # Dynamically load all modular apps (Composio style architecture)
 try:
     import app.apps
