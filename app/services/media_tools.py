@@ -34,6 +34,10 @@ class MediaToolsService:
             'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'extractor_args': {'youtube': ['client=ANDROID_MUSIC,ANDROID,IOS']}
         }
+        
+        cookie_path = str(Path("cookies.txt").absolute())
+        if os.path.exists(cookie_path):
+            ydl_opts['cookiefile'] = cookie_path
 
         def _download():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
