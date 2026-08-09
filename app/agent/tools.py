@@ -384,27 +384,26 @@ async def download_song_tool(user_id: int | str, song_name: str) -> str:
     from app.services.media_tools import media_tools
     import os
     
-    # 1. Search for the song on SoundCloud
-    results = await media_tools.search_soundcloud_songs(song_name, max_results=3)
-    file_path, title, artist = None, None, None
+    # 1. Search for the song on YouTube (Primary, accurate search)
+    file_path, title, artist = await media_tools.download_media_audio(f"ytsearch1:{song_name} audio")
     
-    if results:
-        for res in results:
-            url = res.get('url')
-            if not url:
-                continue
-            
-            file_path, title, artist = await media_tools.download_media_audio(url)
-            # If download succeeded, break the loop
-            if file_path and title != "Error" and "DRM" not in str(title):
-                break
-            else:
-                file_path = None # Reset and try the next result
+    # 2. Fallback to SoundCloud if YouTube failed (e.g. Bot block without cookies)
+    if not file_path or title == "Error" or "Sign in" in str(title):
+        results = await media_tools.search_soundcloud_songs(song_name, max_results=3)
+        file_path, title, artist = None, None, None
         
-    # 2. Fallback to YouTube if all SoundCloud results failed
-    if not file_path:
-        file_path, title, artist = await media_tools.download_media_audio(f"ytsearch1:{song_name} audio")
-    
+        if results:
+            for res in results:
+                url = res.get('url')
+                if not url:
+                    continue
+                
+                file_path, title, artist = await media_tools.download_media_audio(url)
+                if file_path and title != "Error" and "DRM" not in str(title):
+                    break
+                else:
+                    file_path = None
+                    
     if file_path and os.path.exists(file_path):
         from aiogram.types import FSInputFile
         from app.bot.dispatcher import bot
