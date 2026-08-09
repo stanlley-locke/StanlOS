@@ -599,12 +599,14 @@ async def unit_converter(value: float | str, from_unit: str, to_unit: str) -> st
 async def generate_qr_code(user_id: int | str, data: str) -> str:
     from app.bot.dispatcher import bot
     import urllib.parse
+    from aiogram.types import URLInputFile
     try:
         uid = int(user_id)
         encoded_data = urllib.parse.quote(data)
         # Using quickchart for highly readable QR codes, with a modest size and margin
         qr_url = f"https://quickchart.io/qr?text={encoded_data}&size=400&margin=2"
-        await bot.send_photo(chat_id=uid, photo=qr_url, caption=f"QR Code for: {data}")
+        # Send as document to prevent Telegram from applying JPEG compression which ruins QR codes
+        await bot.send_document(chat_id=uid, document=URLInputFile(qr_url, filename="qrcode.png"), caption=f"QR Code for: {data}")
         return f"Successfully generated and sent QR code to user for data: {data}"
     except Exception as e:
         return f"QR code generation failed: {e}"
