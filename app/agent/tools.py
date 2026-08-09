@@ -239,6 +239,31 @@ async def get_financial_summary(user_id: int | str) -> str:
     except Exception as e:
         return f"Failed to get summary: {e}"
 
+@registry.register("search_transactions", "Searches the user's financial transactions. Requires 'user_id' (int) and optional 'query' (string) to search vendor or category names.")
+async def search_transactions(user_id: int | str, query: str = "") -> str:
+    from app.core.database import db
+    try:
+        uid = int(user_id)
+        sql = "SELECT transaction_type, amount, vendor, category, transaction_date FROM transactions WHERE user_id = ?"
+        params = [uid]
+        if query:
+            sql += " AND (vendor LIKE ? OR category LIKE ?)"
+            params.extend([f"%{query}%", f"%{query}%"])
+        sql += " ORDER BY transaction_date DESC LIMIT 10"
+        
+        rows = await db.execute(sql, tuple(params), fetch=True)
+        if not rows:
+            return f"No transactions found matching '{query}'." if query else "No recent transactions found."
+            
+        formatted = []
+        for r in rows:
+            ttype, amount, vendor, cat, tdate = r
+            sign = "+" if ttype == "income" else "-"
+            formatted.append(f"[{tdate[:10]}] {vendor} ({cat}): {sign}Ksh {amount:,.2f}")
+        return "\n".join(formatted)
+    except Exception as e:
+        return f"Failed to search transactions: {e}"
+
 @registry.register("add_task", "Adds a new task/assignment. Requires 'user_id' (int), 'title' (string), and 'due_date' (string, e.g. 'Tomorrow 5pm').")
 async def add_task(user_id: int | str, title: str, due_date: str) -> str:
     from app.core.database import db

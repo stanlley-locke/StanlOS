@@ -32,7 +32,7 @@ JSON Format:
 ROLES = {
     "finance": {
         "description": "You are the Finance Agent. You strictly handle logging expenses, incomes, tracking budgets, and financial summaries.",
-        "allowed_tools": ["log_expense", "log_income", "get_financial_summary", "currency_converter", "crypto_tracker", "calculate"]
+        "allowed_tools": ["log_expense", "log_income", "get_financial_summary", "search_transactions", "currency_converter", "crypto_tracker", "calculate"]
     },
     "research": {
         "description": "You are the Research Agent. You specialize in finding data on the web, reading URLs, deep scraping, and answering complex questions.",
@@ -45,7 +45,7 @@ ROLES = {
 }
 
 class SwarmManager:
-    async def run(self, user_query: str, user_id: int = None, status_callback: Callable[[str], Awaitable[None]] = None) -> str:
+    async def run(self, user_query: str, user_id: int = None, status_callback: Callable[[str], Awaitable[None]] = None, chat_history: List[Dict] = None) -> str:
         # 1. Intent Classification
         routing_prompt = f"""
         Classify the intent of the following user query into one of three agents: 'finance', 'research', or 'general'.
@@ -71,13 +71,13 @@ class SwarmManager:
             
         # 2. Execute via specialized agent
         executor = AgentExecutor(agent_type)
-        return await executor.run(user_query, user_id, status_callback)
+        return await executor.run(user_query, user_id, status_callback, chat_history)
 
 class AgentExecutor:
     def __init__(self, agent_type: str = "general"):
         self.agent_type = agent_type
         
-    async def run(self, user_query: str, user_id: int = None, status_callback: Callable[[str], Awaitable[None]] = None) -> str:
+    async def run(self, user_query: str, user_id: int = None, status_callback: Callable[[str], Awaitable[None]] = None, chat_history: List[Dict] = None) -> str:
         max_iterations = 10
         role_config = ROLES.get(self.agent_type, ROLES["general"])
         
@@ -96,9 +96,13 @@ class AgentExecutor:
         user_context = f"Current User Telegram ID: {user_id}\nUser Request: {user_query}" if user_id else user_query
         
         messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_context}
+            {"role": "system", "content": system_prompt}
         ]
+        
+        if chat_history:
+            messages.extend(chat_history)
+            
+        messages.append({"role": "user", "content": user_context})
         
         last_tool_observation = ""
         

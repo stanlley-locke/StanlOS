@@ -18,16 +18,23 @@ async def cmd_ai_chat_menu(callback: CallbackQuery):
     await callback.answer()
 
 
+# Short-term conversational memory
+chat_memory = {}
+
 @router.message(F.text)
 async def handle_text_message(message: Message):
     """
     Handle generic text messages using the autonomous Agent Executor.
     """
     user_text = message.text.strip()
+    user_id = message.from_user.id
     
     # Ignore slash commands so they don't trigger AI agent loop
     if user_text.startswith('/'):
         return
+        
+    if user_id not in chat_memory:
+        chat_memory[user_id] = []
     
     status_msg = await message.answer("<b>StanlOS Agent</b>\n\n<i>Processing request...</i>")
     
@@ -38,7 +45,19 @@ async def handle_text_message(message: Message):
         except Exception:
             pass
             
-    final_response = await agent.run(user_text, user_id=message.from_user.id, status_callback=status_callback)
+    # Get current history
+    history = chat_memory[user_id]
+            
+    final_response = await agent.run(user_text, user_id=user_id, status_callback=status_callback, chat_history=history)
+    
+    # Append to memory (limit to 5 pairs = 10 messages)
+    chat_memory[user_id].append({"role": "user", "content": user_text})
+    if final_response:
+        chat_memory[user_id].append({"role": "assistant", "content": final_response})
+        
+    if len(chat_memory[user_id]) > 10:
+        chat_memory[user_id] = chat_memory[user_id][-10:]
+        
     
     try:
         await status_msg.delete()
