@@ -11,6 +11,33 @@ logger = logging.getLogger(__name__)
 class DatabaseManager:
     def __init__(self):
         self._connection_string = settings.SQLITE_CLOUD_CONN_STR
+        self._keep_alive_task = None
+
+    async def start_keep_alive(self):
+        """Starts a background loop to prevent SQLite Cloud free node from pausing due to inactivity."""
+        if not self._keep_alive_task:
+            self._keep_alive_task = asyncio.create_task(self._keep_alive_loop())
+
+    async def stop_keep_alive(self):
+        if self._keep_alive_task:
+            self._keep_alive_task.cancel()
+            try:
+                await self._keep_alive_task
+            except asyncio.CancelledError:
+                pass
+            self._keep_alive_task = None
+
+    async def _keep_alive_loop(self):
+        while True:
+            try:
+                # Ping the database every 10 minutes (600 seconds)
+                await asyncio.sleep(600)
+                await self.execute("SELECT 1")
+                logger.debug("Database keep-alive ping successful.")
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.warning(f"Database keep-alive ping failed: {e}")
 
     @contextmanager
     def _get_connection(self):

@@ -30,6 +30,7 @@ async def lifespan(app: FastAPI):
         pass
 
     await db.initialize_schema()
+    await db.start_keep_alive()
     await userbot_service.start()
     await set_bot_commands()
     
@@ -51,6 +52,7 @@ async def lifespan(app: FastAPI):
         polling_task.cancel()
     await delete_webhook()
     await userbot_service.stop()
+    await db.stop_keep_alive()
 
 app = FastAPI(
     title="StanlOS API",
