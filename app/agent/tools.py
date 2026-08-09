@@ -384,17 +384,17 @@ async def download_song_tool(user_id: int | str, song_name: str) -> str:
     from app.services.media_tools import media_tools
     import os
     
-    # 1. Search for the song on SoundCloud (to bypass YouTube bot checks)
+    # 1. Search for the song on SoundCloud
     results = await media_tools.search_soundcloud_songs(song_name, max_results=1)
-    if not results:
-        return f"Could not find any song matching '{song_name}'."
+    file_path, title, artist = None, None, None
+    
+    if results and results[0].get('url'):
+        url = results[0]['url']
+        file_path, title, artist = await media_tools.download_media_audio(url)
         
-    url = results[0].get('url')
-    if not url:
-        return f"Failed to extract URL for '{song_name}'."
-        
-    # 2. Download the audio
-    file_path, title, artist = await media_tools.download_media_audio(url)
+    # 2. Fallback to YouTube if SoundCloud failed (e.g., DRM protected)
+    if not file_path or title == "Error" or "DRM" in str(title):
+        file_path, title, artist = await media_tools.download_media_audio(f"ytsearch1:{song_name} audio")
     
     if file_path and os.path.exists(file_path):
         from aiogram.types import FSInputFile
