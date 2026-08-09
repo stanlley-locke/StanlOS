@@ -69,12 +69,25 @@ async def set_bot_commands():
 
 async def set_webhook():
     if settings.WEBHOOK_URL:
-        url = f"{settings.WEBHOOK_URL}/webhooks/telegram"
-        await bot.set_webhook(
-            url=url,
-            allowed_updates=dp.resolve_used_update_types(),
-            drop_pending_updates=True
-        )
+        # Strip trailing slash or path if user included it by mistake
+        base_url = settings.WEBHOOK_URL.rstrip('/')
+        if base_url.endswith('/webhooks/telegram'):
+            base_url = base_url.replace('/webhooks/telegram', '')
+        url = f"{base_url}/webhooks/telegram"
+        
+        try:
+            await bot.set_webhook(
+                url=url,
+                allowed_updates=dp.resolve_used_update_types(),
+                drop_pending_updates=True
+            )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Could not set webhook (ignoring due to possible deployment race condition): {e}")
 
 async def delete_webhook():
-    await bot.delete_webhook(drop_pending_updates=True)
+    try:
+        await bot.delete_webhook(drop_pending_updates=True)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Could not delete webhook: {e}")
