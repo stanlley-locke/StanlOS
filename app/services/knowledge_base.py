@@ -90,8 +90,15 @@ class KnowledgeBaseService:
             
         context_parts = []
         for res in results:
-            context_parts.append(f"--- Document: {res['file_name']} ---\n{res['raw_text']}")
+            text = res['raw_text']
+            if len(text) > 1000:
+                text = text[:1000] + "... [truncated]"
+            context_parts.append(f"--- Document: {res['file_name']} ---\n{text}")
             
-        return "\n\n".join(context_parts)
+        final_context = "\n\n".join(context_parts)
+        if len(final_context) > 3500:
+            final_context = final_context[:3500] + "... [truncated context]"
+            
+        return final_context
 
 kb_service = KnowledgeBaseService()
