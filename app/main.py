@@ -43,6 +43,17 @@ async def lifespan(app: FastAPI):
         logger.info("No WEBHOOK_URL configured. Starting long-polling...")
         polling_task = asyncio.create_task(dp.start_polling(bot, handle_signals=False))
         
+    try:
+        from app.utils.formatters import SYMBOLS
+        for admin_id in settings.ADMIN_IDS:
+            await bot.send_message(
+                chat_id=admin_id, 
+                text=f"{SYMBOLS['alert']} <b>StanlOS Update Deployed!</b>\n\nSystem has successfully rebooted with the latest code updates.",
+                parse_mode="HTML"
+            )
+    except Exception as e:
+        logger.error(f"Failed to send startup banner: {e}")
+        
     yield
     
     logger.info("Shutting down StanlOS...")
