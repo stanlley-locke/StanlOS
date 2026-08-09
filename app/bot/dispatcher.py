@@ -79,7 +79,7 @@ async def set_webhook():
             await bot.set_webhook(
                 url=url,
                 allowed_updates=dp.resolve_used_update_types(),
-                drop_pending_updates=True
+                drop_pending_updates=False
             )
         except Exception as e:
             import logging
