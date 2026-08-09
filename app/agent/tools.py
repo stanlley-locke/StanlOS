@@ -602,7 +602,8 @@ async def generate_qr_code(user_id: int | str, data: str) -> str:
     try:
         uid = int(user_id)
         encoded_data = urllib.parse.quote(data)
-        qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={encoded_data}"
+        # Using quickchart for highly readable QR codes, with a modest size and margin
+        qr_url = f"https://quickchart.io/qr?text={encoded_data}&size=400&margin=2"
         await bot.send_photo(chat_id=uid, photo=qr_url, caption=f"QR Code for: {data}")
         return f"Successfully generated and sent QR code to user for data: {data}"
     except Exception as e:
