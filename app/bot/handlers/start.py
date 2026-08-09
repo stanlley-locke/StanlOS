@@ -3,6 +3,7 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import StatesGroup, State
 
 from app.core.config import settings
 from app.core.database import db
@@ -10,6 +11,12 @@ from app.utils.formatters import format_dashboard, build_main_menu_kb, SYMBOLS, 
 
 router = Router()
 logger = logging.getLogger(__name__)
+
+class MMFUpdateState(StatesGroup):
+    waiting_for_details = State()
+
+class StockUpdateState(StatesGroup):
+    waiting_for_details = State()
 
 async def get_dashboard_data(user_id: int) -> dict:
     data = {}
@@ -408,15 +415,91 @@ async def cb_market_movers(cb: CallbackQuery):
 @router.callback_query(F.data == "menu:investments")
 async def cmd_investments(event: Message | CallbackQuery):
     user_id = event.from_user.id
-    from app.agent.tools import get_investment_portfolio
+    from app.agent.tools import get_investment_portfolio_data
     if isinstance(event, Message):
         status = await event.answer(f"{SYMBOLS['ai']} Fetching live market data...")
     else:
         status = await event.message.answer(f"{SYMBOLS['ai']} Fetching live market data...")
         
-    res = await get_investment_portfolio(user_id)
-    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Finance", callback_data="menu:finance")]])
-    await smart_edit(status, res, reply_markup=kb)
+    report_text, allocation, total_worth = await get_investment_portfolio_data(user_id)
+    
+    # Generate Chart
+    from app.utils.charts import generate_portfolio_chart
+    chart_file = None
+    if allocation:
+        chart_file = generate_portfolio_chart(allocation, total_worth)
+        
+    buttons = [
+        [InlineKeyboardButton(text="🏦 Update MMF", callback_data="inv:update_mmf"),
+         InlineKeyboardButton(text="📈 Update Stocks", callback_data="inv:update_stock")],
+        [InlineKeyboardButton(text="« Back to Finance", callback_data="menu:finance")]
+    ]
+    kb = InlineKeyboardMarkup(inline_keyboard=buttons)
+    
+    await status.delete()
+    if chart_file:
+        if isinstance(event, Message):
+            await event.answer_photo(photo=chart_file, caption=report_text, reply_markup=kb)
+        else:
+            await event.message.answer_photo(photo=chart_file, caption=report_text, reply_markup=kb)
+    else:
+        if isinstance(event, Message):
+            await event.answer(report_text, reply_markup=kb)
+        else:
+            await event.message.answer(report_text, reply_markup=kb)
+
+@router.callback_query(F.data == "inv:update_mmf")
+async def cb_update_mmf(cb: CallbackQuery, state: FSMContext):
+    await cb.message.answer(
+        "<b>🏦 UPDATE MMF</b>\n\n"
+        "Reply with the Fund Name, New Balance, and Annual Yield %.\n"
+        "<i>Example: ICEA 50000 12.5</i>"
+    )
+    await state.set_state(MMFUpdateState.waiting_for_details)
+
+@router.message(MMFUpdateState.waiting_for_details)
+async def process_mmf_update(message: Message, state: FSMContext):
+    parts = message.text.split()
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Portfolio", callback_data="menu:investments")]])
+    if len(parts) >= 3:
+        try:
+            fund_name = " ".join(parts[:-2])
+            balance = float(parts[-2])
+            yield_pct = float(parts[-1])
+            from app.agent.tools import update_mmf_balance
+            res = await update_mmf_balance(message.from_user.id, fund_name, balance, yield_pct)
+            await message.answer(res, reply_markup=kb)
+        except ValueError:
+            await message.answer(f"{SYMBOLS['alert']} Invalid numbers provided. Example: ICEA 50000 12.5", reply_markup=kb)
+    else:
+        await message.answer(f"{SYMBOLS['alert']} Format: [Fund Name] [Balance] [Yield %]\nExample: ICEA 50000 12.5", reply_markup=kb)
+    await state.clear()
+
+@router.callback_query(F.data == "inv:update_stock")
+async def cb_update_stock(cb: CallbackQuery, state: FSMContext):
+    await cb.message.answer(
+        "<b>📈 UPDATE NSE STOCKS</b>\n\n"
+        "Reply with the Ticker and Number of Shares.\n"
+        "<i>Example: SCOM 15</i> (Set shares to 0 to remove)"
+    )
+    await state.set_state(StockUpdateState.waiting_for_details)
+
+@router.message(StockUpdateState.waiting_for_details)
+async def process_stock_update(message: Message, state: FSMContext):
+    parts = message.text.split()
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Portfolio", callback_data="menu:investments")]])
+    if len(parts) >= 2:
+        try:
+            ticker = parts[0]
+            shares = float(parts[1])
+            from app.agent.tools import update_stock_shares
+            res = await update_stock_shares(message.from_user.id, ticker, shares)
+            await message.answer(res, reply_markup=kb)
+        except ValueError:
+            await message.answer(f"{SYMBOLS['alert']} Invalid number of shares.", reply_markup=kb)
+    else:
+        await message.answer(f"{SYMBOLS['alert']} Format: [Ticker] [Shares]\nExample: SCOM 15", reply_markup=kb)
+    await state.clear()
 
 @router.message(Command("buy_stock", "sell_stock", "update_stock"))
 async def cmd_update_stock(message: Message):

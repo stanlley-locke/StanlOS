@@ -704,8 +704,7 @@ async def update_stock_shares(user_id: int | str, ticker: str, shares: float) ->
     except Exception as e:
         return f"Failed to update stock shares: {e}"
 
-@registry.register("get_investment_portfolio", "Calculates daily MMF interest, fetches live NSE stock prices, and returns the user's full net worth investment portfolio. Requires 'user_id' (int).")
-async def get_investment_portfolio(user_id: int | str) -> str:
+async def get_investment_portfolio_data(user_id: int | str) -> tuple[str, dict, float]:
     from app.core.database import db
     try:
         uid = int(user_id)
@@ -714,6 +713,7 @@ async def get_investment_portfolio(user_id: int | str) -> str:
         
         report = ["<b>📊 INVESTMENT PORTFOLIO SUMMARY</b>\n"]
         total_worth = 0.0
+        allocation = {}
         
         # MMF section
         if mmf_rows:
@@ -723,6 +723,7 @@ async def get_investment_portfolio(user_id: int | str) -> str:
                 yld = float(r[2])
                 daily_interest = (bal * (yld / 100)) / 365
                 total_worth += bal
+                allocation[f"MMF ({r[0]})"] = bal
                 report.append(f"• {r[0]}: KES {bal:,.2f} (Yield: {yld}%, +KES {daily_interest:,.2f}/day)")
             report.append("")
             
@@ -755,6 +756,8 @@ async def get_investment_portfolio(user_id: int | str) -> str:
                                 shares = shares_map.get(sym, 0)
                                 val = price * shares
                                 total_worth += val
+                                if val > 0:
+                                    allocation[sym] = val
                                 report.append(f"• {sym}: {shares} shares @ KES {price:,.2f} = KES {val:,.2f}")
                                 shares_map.pop(sym, None)
                                 
@@ -797,9 +800,15 @@ async def get_investment_portfolio(user_id: int | str) -> str:
         except Exception:
             pass
 
-        return "\n".join(report).replace("<span style='color:green'>", "").replace("<span style='color:red'>", "").replace("</span>", "")
+        final_text = "\n".join(report).replace("<span style='color:green'>", "").replace("<span style='color:red'>", "").replace("</span>", "")
+        return final_text, allocation, total_worth
     except Exception as e:
-        return f"Failed to retrieve investment portfolio: {e}"
+        return f"Failed to retrieve investment portfolio: {e}", {}, 0.0
+
+@registry.register("get_investment_portfolio", "Calculates daily MMF interest, fetches live NSE stock prices, and returns the user's full net worth investment portfolio. Requires 'user_id' (int).")
+async def get_investment_portfolio(user_id: int | str) -> str:
+    report, _, _ = await get_investment_portfolio_data(user_id)
+    return report
 
 @registry.register("fetch_github_trending", "Fetches top trending GitHub repositories. Requires 'language' (string, optional, default 'python').")
 async def fetch_github_trending(language: str = "python") -> str:

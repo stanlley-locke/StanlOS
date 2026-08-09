@@ -26,6 +26,11 @@ class IncomeState(StatesGroup):
 async def cb_finance_menu(event: Message | CallbackQuery):
     user_id = event.from_user.id
     
+    if isinstance(event, Message):
+        status = await event.answer(f"{SYMBOLS['ai']} Generating financial dashboard...")
+    else:
+        status = await event.message.answer(f"{SYMBOLS['ai']} Generating financial dashboard...")
+        
     inc_res = await db.execute("SELECT SUM(amount) FROM transactions WHERE user_id = ? AND transaction_type = 'income'", (user_id,), fetch=True)
     exp_res = await db.execute("SELECT SUM(amount) FROM transactions WHERE user_id = ? AND transaction_type = 'expense'", (user_id,), fetch=True)
     
@@ -33,11 +38,18 @@ async def cb_finance_menu(event: Message | CallbackQuery):
     total_exp = exp_res[0][0] or 0.0 if exp_res else 0.0
     net_bal = total_inc - total_exp
     
+    from app.agent.tools import get_investment_portfolio_data
+    from app.utils.charts import generate_dashboard_chart
+    
+    _, allocation, total_worth = await get_investment_portfolio_data(user_id)
+    chart_file = generate_dashboard_chart(total_inc, total_exp, allocation, total_worth)
+    
     text = (
         f"<b>Financial Control & Accounting</b>\n\n"
         f"<b>Net Balance:</b> Ksh {net_bal:,.2f}\n"
         f"<b>Total Income:</b> +Ksh {total_inc:,.2f}\n"
-        f"<b>Total Expense:</b> -Ksh {total_exp:,.2f}\n\n"
+        f"<b>Total Expense:</b> -Ksh {total_exp:,.2f}\n"
+        f"<b>Investments Worth:</b> Ksh {total_worth:,.2f}\n\n"
         f"• <code>/expense &lt;amount vendor&gt;</code> - Log expense\n"
         f"• <code>/income &lt;amount source&gt;</code> - Log income\n"
         f"• <code>/summary</code> - Category breakdown report\n"
@@ -51,7 +63,18 @@ async def cb_finance_menu(event: Message | CallbackQuery):
         [("Reset Financial Data", "fin:reset_confirm")]
     ]
     kb = build_sub_menu_kb(buttons)
-    await smart_edit(event, text, reply_markup=kb)
+    
+    await status.delete()
+    if isinstance(event, CallbackQuery):
+        try:
+            await event.message.delete()
+        except Exception:
+            pass
+            
+    if isinstance(event, Message):
+        await event.answer_photo(photo=chart_file, caption=text, reply_markup=kb)
+    else:
+        await event.message.answer_photo(photo=chart_file, caption=text, reply_markup=kb)
 
 @router.callback_query(F.data == "fin:action_expense")
 async def cb_action_expense(cb: CallbackQuery, state: FSMContext):
