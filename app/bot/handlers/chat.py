@@ -4,7 +4,7 @@ import logging
 import asyncio
 
 from app.agent.executor import agent
-from app.utils.formatters import SYMBOLS, safe_html
+from app.utils.formatters import smart_edit, SYMBOLS, safe_html
 
 logger = logging.getLogger(__name__)
 router = Router()

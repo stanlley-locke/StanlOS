@@ -7,7 +7,7 @@ from aiogram.types import FSInputFile
 
 from app.services.media_tools import media_tools
 from app.services.knowledge_base import kb_service
-from app.utils.formatters import SYMBOLS, build_sub_menu_kb, safe_html
+from app.utils.formatters import smart_edit, SYMBOLS, build_sub_menu_kb, safe_html
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -25,10 +25,7 @@ async def cb_media_menu(event: Message | CallbackQuery):
         [("🎵 Social Media MP3 Extractor", "media:yt_help")]
     ]
     kb = build_sub_menu_kb(buttons)
-    if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
-    else:
-        await event.message.edit_text(text, reply_markup=kb)
+    await smart_edit(event, text, reply_markup=kb)
 
 @router.callback_query(F.data == "media:yt_help")
 async def cb_yt_help(cb: CallbackQuery):

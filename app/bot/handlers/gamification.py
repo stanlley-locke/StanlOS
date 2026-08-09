@@ -8,7 +8,7 @@ from aiogram.fsm.state import StatesGroup, State
 
 from app.core.database import db
 from app.services.ai_cloudflare import ai_client
-from app.utils.formatters import SYMBOLS, build_sub_menu_kb, safe_html
+from app.utils.formatters import smart_edit, SYMBOLS, build_sub_menu_kb, safe_html
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -41,10 +41,7 @@ async def cb_gamification_menu(event: Message | CallbackQuery):
         [("AI Trivia Quiz", "game:trivia"), ("Top Leaderboard", "game:leaderboard")]
     ]
     kb = build_sub_menu_kb(buttons)
-    if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
-    else:
-        await event.message.edit_text(text, reply_markup=kb)
+    await smart_edit(event, text, reply_markup=kb)
 
 @router.callback_query(F.data == "game:math_start")
 @router.message(Command("math_game"))
@@ -79,10 +76,7 @@ async def cb_math_game(event: Message | CallbackQuery):
         btn_row[2:],
         [InlineKeyboardButton(text="« Back to Games", callback_data="menu:gamification")]
     ])
-    if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
-    else:
-        await event.message.edit_text(text, reply_markup=kb)
+    await smart_edit(event, text, reply_markup=kb)
 
 @router.callback_query(F.data.startswith("math_ans:"))
 async def cb_math_answer(cb: CallbackQuery):
@@ -100,7 +94,7 @@ async def cb_math_answer(cb: CallbackQuery):
         text = f"<b>Incorrect!</b>\n\nThe correct answer was: <code>{ans}</code>"
         
     kb = build_sub_menu_kb([[("Play Math Game Again", "game:math_start")]])
-    await cb.message.edit_text(text, reply_markup=kb)
+    await smart_edit(cb, text, reply_markup=kb)
 
 @router.callback_query(F.data == "game:checkin")
 @router.message(Command("checkin"))

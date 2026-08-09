@@ -78,6 +78,29 @@ def generate_bar_chart(labels: list, values: list, title: str, horizontal: bool 
     ax.set_title(title, size=14, weight="bold", pad=15)
     return _save_to_buffer()
 
+def generate_dashboard_chart(income: float, expense: float) -> BufferedInputFile:
+    """Generates a high-level income vs expense bar chart for the start menu."""
+    fig, ax = plt.subplots(figsize=(6, 3))
+    
+    labels = ['Income', 'Expenses']
+    values = [income, expense]
+    colors = ['#A6E3A1', '#F38BA8']
+    
+    bars = ax.barh(labels, values, color=colors, height=0.5, edgecolor='#1E1E2E')
+    ax.invert_yaxis()
+    
+    # Add text labels on bars
+    for idx, rect in enumerate(bars):
+        width = rect.get_width()
+        ax.text(width + (max(values)*0.02 if max(values) > 0 else 10), rect.get_y() + rect.get_height()/2.0, f"Ksh {values[idx]:,.2f}", 
+                ha='left', va='center', weight='bold')
+                
+    ax.set_title("Financial Snapshot", size=12, weight="bold", pad=15)
+    ax.grid(False)
+    ax.set_xticks([])
+    
+    return _save_to_buffer()
+
 def generate_gauge_dashboard(cpu: float, ram: float, disk: float) -> BufferedInputFile:
     """Generates a triple bar dashboard for system stats."""
     labels = ['CPU Usage', 'RAM Usage', 'Disk Space']

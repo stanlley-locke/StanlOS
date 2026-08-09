@@ -8,7 +8,7 @@ from aiogram.fsm.state import StatesGroup, State
 
 from app.core.database import db
 from app.services.ai_cloudflare import ai_client
-from app.utils.formatters import SYMBOLS, build_sub_menu_kb, safe_html
+from app.utils.formatters import smart_edit, SYMBOLS, build_sub_menu_kb, safe_html
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -30,10 +30,7 @@ async def cb_crm_menu(event: Message | CallbackQuery):
         [("👤 Add New Contact", "crm:add_contact"), ("🌐 View Network", "crm:view_network")]
     ]
     kb = build_sub_menu_kb(buttons)
-    if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
-    else:
-        await event.message.edit_text(text, reply_markup=kb)
+    await smart_edit(event, text, reply_markup=kb)
 
 @router.callback_query(F.data == "crm:add_contact")
 async def cb_add_contact(cb: CallbackQuery, state: FSMContext):
@@ -115,7 +112,7 @@ async def process_contact(message: Message, details: str):
         name = details.split(',')[0].strip()
         await db.execute("INSERT INTO contacts (user_id, name, context_summary) VALUES (?, ?, ?)", (message.from_user.id, name, details))
         kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to CRM", callback_data="menu:crm")]])
-        await status_msg.edit_text(f"{SYMBOLS['success']} Contact '{safe_html(name)}' saved.", reply_markup=kb)
+        await smart_edit(status_msg, f"{SYMBOLS['success']} Contact '{safe_html(name)}' saved.", reply_markup=kb)
 
 @router.callback_query(F.data == "crm:view_network")
 @router.message(Command("network"))

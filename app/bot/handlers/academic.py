@@ -9,7 +9,7 @@ from dateutil import parser as dateparser
 
 from app.core.database import db
 from app.services.ai_cloudflare import ai_client
-from app.utils.formatters import SYMBOLS, safe_html, build_sub_menu_kb
+from app.utils.formatters import smart_edit, SYMBOLS, safe_html, build_sub_menu_kb
 
 router = Router()
 logger = logging.getLogger(__name__)

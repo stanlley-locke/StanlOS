@@ -9,7 +9,7 @@ from aiogram.fsm.state import StatesGroup, State
 
 from app.core.database import db
 from app.services.ai_cloudflare import ai_client
-from app.utils.formatters import SYMBOLS, build_sub_menu_kb, safe_html
+from app.utils.formatters import smart_edit, SYMBOLS, build_sub_menu_kb, safe_html
 from app.utils.charts import generate_pie_chart, generate_line_chart, generate_bar_chart
 
 router = Router()
@@ -50,10 +50,7 @@ async def cb_finance_menu(event: Message | CallbackQuery):
         [("Reset Financial Data", "fin:reset_confirm")]
     ]
     kb = build_sub_menu_kb(buttons)
-    if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
-    else:
-        await event.message.edit_text(text, reply_markup=kb)
+    await smart_edit(event, text, reply_markup=kb)
 
 @router.callback_query(F.data == "fin:action_expense")
 async def cb_action_expense(cb: CallbackQuery, state: FSMContext):
@@ -129,7 +126,7 @@ async def process_expense(message: Message, details: str):
         
         if amount <= 0.0:
             kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Finance", callback_data="menu:finance")]])
-            return await status_msg.edit_text(f"{SYMBOLS['alert']} Invalid amount 0.00.", reply_markup=kb)
+            return await smart_edit(status_msg, f"{SYMBOLS['alert']} Invalid amount 0.00.", reply_markup=kb)
 
         query = """
         INSERT INTO transactions (user_id, amount, vendor, category, transaction_type, raw_sms, transaction_date)
@@ -208,7 +205,7 @@ async def process_income(message: Message, details: str):
         
         if amount <= 0.0:
             kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Finance", callback_data="menu:finance")]])
-            return await status_msg.edit_text(f"{SYMBOLS['alert']} Invalid amount 0.00.", reply_markup=kb)
+            return await smart_edit(status_msg, f"{SYMBOLS['alert']} Invalid amount 0.00.", reply_markup=kb)
 
         query = """
         INSERT INTO transactions (user_id, amount, vendor, category, transaction_type, raw_sms, transaction_date)
@@ -340,7 +337,7 @@ async def cb_vendors(cb: CallbackQuery):
     if not vendor_rows:
         text += "No vendor data recorded yet."
         kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Finance", callback_data="menu:finance")]])
-        return await cb.message.edit_text(text, reply_markup=kb)
+        return await smart_edit(cb, text, reply_markup=kb)
         
     labels = []
     values = []
@@ -385,10 +382,7 @@ async def cmd_history(event: Message | CallbackQuery):
     kb_rows.append([InlineKeyboardButton(text="« Back to Finance", callback_data="menu:finance")])
     kb = InlineKeyboardMarkup(inline_keyboard=kb_rows)
     
-    if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
-    else:
-        await event.message.edit_text(text, reply_markup=kb)
+    await smart_edit(event, text, reply_markup=kb)
 
 @router.callback_query(F.data.startswith("fin_del:"))
 async def cb_delete_txn(cb: CallbackQuery):
@@ -408,10 +402,7 @@ async def cmd_reset_transactions(event: Message | CallbackQuery):
         [InlineKeyboardButton(text="🔴 Yes, Reset All Records", callback_data="fin:do_reset")],
         [InlineKeyboardButton(text="« Cancel & Go Back", callback_data="menu:finance")]
     ])
-    if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
-    else:
-        await event.message.edit_text(text, reply_markup=kb)
+    await smart_edit(event, text, reply_markup=kb)
 
 @router.callback_query(F.data == "fin:do_reset")
 async def cb_do_reset(cb: CallbackQuery):
@@ -420,4 +411,4 @@ async def cb_do_reset(cb: CallbackQuery):
     await cb.answer("All transaction records have been reset to zero!")
     text = f"<b>{SYMBOLS['success']} TRANSACTION HISTORY RESET TO ZERO</b>\n\nAll financial transaction records have been cleared."
     kb = build_sub_menu_kb([])
-    await cb.message.edit_text(text, reply_markup=kb)
+    await smart_edit(cb, text, reply_markup=kb)

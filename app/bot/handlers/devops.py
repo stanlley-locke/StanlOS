@@ -8,7 +8,7 @@ from aiogram.filters import Command
 
 from app.core.config import settings
 from app.core.database import db
-from app.utils.formatters import SYMBOLS, build_sub_menu_kb, make_progress_bar
+from app.utils.formatters import smart_edit, SYMBOLS, build_sub_menu_kb, make_progress_bar
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -42,10 +42,7 @@ async def cmd_devops(event: Message | CallbackQuery):
     ]
     kb = build_sub_menu_kb(buttons)
     
-    if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
-    else:
-        await event.message.edit_text(text, reply_markup=kb)
+    await smart_edit(event, text, reply_markup=kb)
 
 @router.callback_query(F.data == "devops:vacuum")
 @router.message(Command("db_vacuum"))
@@ -61,10 +58,7 @@ async def cb_vacuum(event: Message | CallbackQuery):
         text = f"<b>Database Maintenance Failed:</b> {e}"
         
     kb = build_sub_menu_kb([])
-    if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
-    else:
-        await event.message.edit_text(text, reply_markup=kb)
+    await smart_edit(event, text, reply_markup=kb)
 
 @router.callback_query(F.data == "devops:purge_cache")
 @router.message(Command("purge_cache"))
@@ -84,10 +78,7 @@ async def cb_purge_cache(event: Message | CallbackQuery):
             
     text = f"<b>Cache Purge Complete</b>\n\n[OK] Removed {count} temporary downloaded media files."
     kb = build_sub_menu_kb([])
-    if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
-    else:
-        await event.message.edit_text(text, reply_markup=kb)
+    await smart_edit(event, text, reply_markup=kb)
 
 @router.callback_query(F.data == "devops:stats")
 @router.message(Command("stats"))
@@ -164,7 +155,7 @@ async def cmd_health(event: Message | CallbackQuery):
         f"<b>Overall Status   :</b> {SYMBOLS['success']} SYSTEM HEALTHY"
     )
     kb = build_sub_menu_kb([])
-    await status_msg.edit_text(text, reply_markup=kb)
+    await smart_edit(status_msg, text, reply_markup=kb)
 
 @router.message(Command("invite_admin"))
 async def cmd_invite_admin(message: Message):

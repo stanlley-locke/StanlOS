@@ -4,7 +4,7 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKe
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
-from app.utils.formatters import build_sub_menu_kb, SYMBOLS
+from app.utils.formatters import smart_edit, build_sub_menu_kb, SYMBOLS
 from app.apps.registry import APPS_METADATA
 from app.bot.states import AppStoreState
 from app.core.database import db
@@ -41,7 +41,7 @@ async def cb_apps_menu(cb: CallbackQuery, state: FSMContext):
     buttons.append([InlineKeyboardButton(text="« Back to Dashboard", callback_data="menu:main")])
     
     kb = InlineKeyboardMarkup(inline_keyboard=buttons)
-    await cb.message.edit_text(text, reply_markup=kb)
+    await smart_edit(cb, text, reply_markup=kb)
 
 @router.callback_query(F.data.startswith("appcat:"))
 async def cb_app_category(cb: CallbackQuery):
@@ -64,7 +64,7 @@ async def cb_app_category(cb: CallbackQuery):
     buttons.append([InlineKeyboardButton(text="« Back to Categories", callback_data="menu:apps")])
     kb = InlineKeyboardMarkup(inline_keyboard=buttons)
     
-    await cb.message.edit_text(text, reply_markup=kb)
+    await smart_edit(cb, text, reply_markup=kb)
 
 @router.callback_query(F.data.startswith("appsearch:init"))
 async def cb_appsearch_init(cb: CallbackQuery, state: FSMContext):
@@ -138,7 +138,7 @@ async def cb_app_detail(cb: CallbackQuery, state: FSMContext):
     kb = InlineKeyboardMarkup(inline_keyboard=buttons)
     
     if cb.message:
-        await cb.message.edit_text(text, reply_markup=kb)
+        await smart_edit(cb, text, reply_markup=kb)
 
 @router.callback_query(F.data.startswith("appauth_free:"))
 async def cb_appauth_free(cb: CallbackQuery, state: FSMContext):

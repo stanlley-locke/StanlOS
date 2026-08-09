@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 
 from app.core.config import settings
 from app.core.database import db
-from app.utils.formatters import format_dashboard, build_main_menu_kb, SYMBOLS, build_sub_menu_kb
+from app.utils.formatters import format_dashboard, build_main_menu_kb, SYMBOLS, build_sub_menu_kb, smart_edit
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -65,10 +65,14 @@ async def cmd_start(event: Message | CallbackQuery):
     text = format_dashboard(data)
     kb = build_main_menu_kb(is_admin)
     
+    from app.utils.charts import generate_dashboard_chart
+    chart_file = generate_dashboard_chart(data["total_income"], data["total_expense"])
+    
     if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
+        await event.answer_photo(photo=chart_file, caption=text, reply_markup=kb)
     else:
-        await event.message.edit_text(text, reply_markup=kb)
+        await event.message.delete()
+        await event.message.answer_photo(photo=chart_file, caption=text, reply_markup=kb)
 
 @router.callback_query(F.data == "menu:settings")
 async def cb_settings(cb: CallbackQuery):
@@ -84,7 +88,7 @@ async def cb_settings(cb: CallbackQuery):
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]
     ])
-    await cb.message.edit_text(text, reply_markup=kb)
+    await smart_edit(cb, text, reply_markup=kb)
 
 @router.message(Command("help"))
 @router.callback_query(F.data == "menu:help")
@@ -102,10 +106,7 @@ async def cmd_help(event: Message | CallbackQuery):
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]
     ])
-    if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
-    else:
-        await event.message.edit_text(text, reply_markup=kb)
+    await smart_edit(event, text, reply_markup=kb)
 
 @router.callback_query(F.data == "menu:workload")
 async def cb_workload(cb: CallbackQuery):
@@ -129,7 +130,7 @@ async def cb_workload(cb: CallbackQuery):
         [("Clear All Tasks", "academic:clear")]
     ]
     kb = build_sub_menu_kb(buttons)
-    await cb.message.edit_text(text, reply_markup=kb)
+    await smart_edit(cb, text, reply_markup=kb)
 
 @router.callback_query(F.data == "menu:forecasts")
 async def cb_forecasts(cb: CallbackQuery):
@@ -145,7 +146,7 @@ async def cb_forecasts(cb: CallbackQuery):
         [("Convert Currency", "menu:convert_quick"), ("Wikipedia Search", "menu:wiki_quick")]
     ]
     kb = build_sub_menu_kb(buttons)
-    await cb.message.edit_text(text, reply_markup=kb)
+    await smart_edit(cb, text, reply_markup=kb)
 
 @router.message(Command("weather"))
 @router.callback_query(F.data == "menu:weather")
@@ -160,10 +161,7 @@ async def cmd_weather(event: Message | CallbackQuery):
     result = await get_weather(location)
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
     text = f"<b>🌤️ WEATHER REPORT</b>\n\n{result}\n\n<i>Type /weather &lt;city&gt; to check any location.</i>"
-    if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
-    else:
-        await event.message.edit_text(text, reply_markup=kb)
+    await smart_edit(event, text, reply_markup=kb)
 
 @router.callback_query(F.data == "menu:calc")
 @router.message(Command("calculate", "calc"))
@@ -183,10 +181,7 @@ async def cmd_calc(event: Message | CallbackQuery):
         f"• <code>/calculate 1500 * 0.16 + 250</code>\n"
         f"• <code>/calculate (25000 - 1500) / 30</code>"
     )
-    if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
-    else:
-        await event.message.edit_text(text, reply_markup=kb)
+    await smart_edit(event, text, reply_markup=kb)
 
 @router.message(Command("memory"))
 async def cmd_memory(message: Message):

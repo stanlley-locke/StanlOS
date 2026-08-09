@@ -8,7 +8,7 @@ from aiogram.fsm.state import StatesGroup, State
 
 from app.services.knowledge_base import kb_service
 from app.core.database import db
-from app.utils.formatters import SYMBOLS, build_sub_menu_kb, safe_html, make_progress_bar
+from app.utils.formatters import smart_edit, SYMBOLS, build_sub_menu_kb, safe_html, make_progress_bar
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -34,10 +34,7 @@ async def cb_knowledge_menu(event: Message | CallbackQuery):
         [("📚 Browse Index", "kb:list")]
     ]
     kb = build_sub_menu_kb(buttons)
-    if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
-    else:
-        await event.message.edit_text(text, reply_markup=kb)
+    await smart_edit(event, text, reply_markup=kb)
 
 @router.callback_query(F.data == "kb:add_note")
 async def cb_add_note(cb: CallbackQuery, state: FSMContext):
@@ -113,7 +110,7 @@ async def process_note_tags(message: Message, state: FSMContext):
             reply_markup=kb
         )
     else:
-        await status_msg.edit_text(f"{SYMBOLS['alert']} Database write failed.", reply_markup=kb)
+        await smart_edit(status_msg, f"{SYMBOLS['alert']} Database write failed.", reply_markup=kb)
         
     await state.clear()
 

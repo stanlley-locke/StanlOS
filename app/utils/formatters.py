@@ -139,3 +139,16 @@ def build_sub_menu_kb(buttons: list = None) -> InlineKeyboardMarkup:
                 rows.append([InlineKeyboardButton(text=text, callback_data=cb)])
     rows.append([InlineKeyboardButton(text="« Back to Main Dashboard", callback_data="menu:main")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+async def smart_edit(event, text: str, reply_markup=None):
+    """Safely edits text, or replaces a photo/document with text."""
+    from aiogram.types import Message, CallbackQuery
+    if isinstance(event, Message):
+        await event.answer(text, reply_markup=reply_markup)
+    elif isinstance(event, CallbackQuery):
+        msg = event.message
+        if getattr(msg, 'photo', None) or getattr(msg, 'document', None):
+            await msg.delete()
+            await msg.answer(text, reply_markup=reply_markup)
+        else:
+            await msg.edit_text(text, reply_markup=reply_markup)
