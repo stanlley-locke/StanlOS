@@ -45,7 +45,45 @@ async def get_dashboard_data(user_id: int) -> dict:
     
     contacts_count = await db.execute("SELECT COUNT(*) FROM contacts WHERE user_id = ?", (user_id,), fetch=True)
     data["contacts_count"] = contacts_count[0][0] if contacts_count else 0
-        
+    
+    # Investments Data
+    import aiohttp
+    data["total_worth"] = 0.0
+    data["stock_data"] = {}
+    
+    mmf_rows = await db.execute("SELECT current_balance FROM investments_mmf WHERE user_id = ?", (user_id,), fetch=True)
+    if mmf_rows:
+        for r in mmf_rows:
+            data["total_worth"] += float(r[0])
+            
+    stock_rows = await db.execute("SELECT ticker, shares FROM investments_stocks WHERE user_id = ?", (user_id,), fetch=True)
+    if stock_rows:
+        tickers_query = []
+        shares_map = {}
+        for r in stock_rows:
+            sym = r[0]
+            shares = float(r[1])
+            tickers_query.append(f"NSEKE:{sym}")
+            shares_map[sym] = shares
+            
+        url = "https://scanner.tradingview.com/kenya/scan"
+        payload = {"symbols": {"tickers": tickers_query}, "columns": ["close"]}
+        try:
+            async with aiohttp.ClientSession(headers={"User-Agent": "Mozilla/5.0"}) as session:
+                async with session.post(url, json=payload, timeout=3) as resp:
+                    if resp.status == 200:
+                        td = await resp.json()
+                        if td.get("data"):
+                            for item in td["data"]:
+                                sym = item["s"].replace("NSEKE:", "")
+                                price = float(item["d"][0] if item["d"] else 0.0)
+                                shares = shares_map.get(sym, 0)
+                                val = price * shares
+                                data["total_worth"] += val
+                                data["stock_data"][sym] = val
+        except Exception as e:
+            logger.error(f"Failed to fetch stock prices for dashboard: {e}")
+            
     return data
 
 @router.message(Command("start", "menu"))
@@ -66,7 +104,7 @@ async def cmd_start(event: Message | CallbackQuery):
     kb = build_main_menu_kb(is_admin)
     
     from app.utils.charts import generate_dashboard_chart
-    chart_file = generate_dashboard_chart(data["total_income"], data["total_expense"])
+    chart_file = generate_dashboard_chart(data["total_income"], data["total_expense"], data.get("stock_data"), data.get("total_worth", 0.0))
     
     if isinstance(event, Message):
         await event.answer_photo(photo=chart_file, caption=text, reply_markup=kb)
@@ -96,8 +134,10 @@ async def cmd_help(event: Message | CallbackQuery):
     text = (
         f"<b>StanlOS Command Reference</b>\n\n"
         f"• <b>Tasks:</b> /tasks, /assign &lt;title&gt;, /clear_tasks\n"
-        f"• <b>Finance:</b> /finance, /expense, /income, /summary, /stock TSLA, /nse SCOM, /crypto BTC\n"
+        f"• <b>Finance:</b> /finance, /expense, /income, /summary\n"
+        f"• <b>Investments:</b> /investments, /update_mmf, /buy_stock\n"
         f"• <b>Tools:</b> /convert 100 USD KES, /unit 10 km mi, /time, /qr &lt;url&gt;\n"
+        f"• <b>Markets:</b> /stock TSLA, /nse SCOM, /crypto BTC\n"
         f"• <b>Research:</b> /wiki concept, /github python, /summarize &lt;text&gt;\n"
         f"• <b>Memory:</b> /note &lt;text&gt;, /find &lt;query&gt;, /memory\n"
         f"• <b>CRM & Media:</b> /contact &lt;name&gt;, /yt &lt;url&gt;\n"
@@ -355,3 +395,52 @@ async def cmd_summarize(message: Message):
         await status.edit_text(f"<b>📝 TEXT SUMMARY</b>\n\n{res}", reply_markup=kb)
     else:
         await message.answer("<b>📝 TEXT SUMMARY</b>\n\nUsage: <code>/summarize &lt;long text&gt;</code>", reply_markup=kb)
+
+@router.message(Command("investments"))
+async def cmd_investments(message: Message):
+    from app.agent.tools import get_investment_portfolio
+    status = await message.answer(f"{SYMBOLS['ai']} Fetching live market data...")
+    res = await get_investment_portfolio(message.from_user.id)
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
+    await status.edit_text(res, reply_markup=kb)
+
+@router.message(Command("buy_stock", "sell_stock", "update_stock"))
+async def cmd_update_stock(message: Message):
+    parts = message.text.split()
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
+    if len(parts) >= 3:
+        try:
+            ticker = parts[1]
+            shares = float(parts[2])
+            from app.agent.tools import update_stock_shares
+            res = await update_stock_shares(message.from_user.id, ticker, shares)
+            await message.answer(f"<b>📈 PORTFOLIO UPDATED</b>\n\n{res}", reply_markup=kb)
+        except ValueError:
+            await message.answer("Shares must be a number.", reply_markup=kb)
+    else:
+        await message.answer(
+            "<b>📈 UPDATE PORTFOLIO</b>\n\nUsage: <code>/update_stock &lt;ticker&gt; &lt;total_shares&gt;</code>\nExample: <code>/update_stock SCOM 100</code>\n"
+            "(To sell/remove a stock completely, set shares to 0)",
+            reply_markup=kb
+        )
+
+@router.message(Command("update_mmf"))
+async def cmd_update_mmf(message: Message):
+    # /update_mmf CMMF 87340 11.11
+    parts = message.text.split()
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
+    if len(parts) >= 4:
+        try:
+            fund_name = parts[1]
+            balance = float(parts[2])
+            yield_pct = float(parts[3])
+            from app.agent.tools import update_mmf_balance
+            res = await update_mmf_balance(message.from_user.id, fund_name, balance, yield_pct)
+            await message.answer(f"<b>🏦 MMF UPDATED</b>\n\n{res}", reply_markup=kb)
+        except ValueError:
+            await message.answer("Balance and yield must be numbers.", reply_markup=kb)
+    else:
+        await message.answer(
+            "<b>🏦 UPDATE MMF</b>\n\nUsage: <code>/update_mmf &lt;FundName&gt; &lt;Balance&gt; &lt;Yield%&gt;</code>\nExample: <code>/update_mmf CMMF 87340 11.11</code>",
+            reply_markup=kb
+        )

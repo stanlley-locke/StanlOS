@@ -660,6 +660,117 @@ async def get_nse_stock_price(symbol: str) -> str:
     except Exception as e:
         return f"NSE Stock lookup error: {e}"
 
+@registry.register("update_mmf_balance", "Updates the user's Money Market Fund (MMF) details. Requires 'user_id' (int), 'fund_name' (str), 'balance' (float), and 'annual_yield' (float).")
+async def update_mmf_balance(user_id: int | str, fund_name: str, balance: float, annual_yield: float) -> str:
+    from app.core.database import db
+    try:
+        uid = int(user_id)
+        # Check if exists
+        exists = await db.execute("SELECT id FROM investments_mmf WHERE user_id = ? AND fund_name = ?", (uid, fund_name), fetch=True)
+        if exists:
+            await db.execute(
+                "UPDATE investments_mmf SET current_balance = ?, annual_yield = ?, last_updated = CURRENT_TIMESTAMP WHERE id = ?",
+                (balance, annual_yield, exists[0][0])
+            )
+        else:
+            await db.execute(
+                "INSERT INTO investments_mmf (user_id, fund_name, current_balance, annual_yield) VALUES (?, ?, ?, ?)",
+                (uid, fund_name, balance, annual_yield)
+            )
+        return f"Successfully updated MMF '{fund_name}'. New Balance: KES {balance:,.2f} | Yield: {annual_yield}%"
+    except Exception as e:
+        return f"Failed to update MMF: {e}"
+
+@registry.register("update_stock_shares", "Updates or adds NSE stock shares for the user. Requires 'user_id' (int), 'ticker' (str), and 'shares' (float).")
+async def update_stock_shares(user_id: int | str, ticker: str, shares: float) -> str:
+    from app.core.database import db
+    try:
+        uid = int(user_id)
+        sym = ticker.strip().upper()
+        if sym.startswith("NSEKE:"):
+            sym = sym.replace("NSEKE:", "")
+            
+        exists = await db.execute("SELECT id FROM investments_stocks WHERE user_id = ? AND ticker = ?", (uid, sym), fetch=True)
+        if exists:
+            if shares <= 0:
+                await db.execute("DELETE FROM investments_stocks WHERE id = ?", (exists[0][0],))
+                return f"Successfully removed {sym} from your portfolio."
+            else:
+                await db.execute("UPDATE investments_stocks SET shares = ? WHERE id = ?", (shares, exists[0][0]))
+        else:
+            if shares > 0:
+                await db.execute("INSERT INTO investments_stocks (user_id, ticker, shares) VALUES (?, ?, ?)", (uid, sym, shares))
+        return f"Successfully updated portfolio. You now own {shares} shares of {sym}."
+    except Exception as e:
+        return f"Failed to update stock shares: {e}"
+
+@registry.register("get_investment_portfolio", "Calculates daily MMF interest, fetches live NSE stock prices, and returns the user's full net worth investment portfolio. Requires 'user_id' (int).")
+async def get_investment_portfolio(user_id: int | str) -> str:
+    from app.core.database import db
+    try:
+        uid = int(user_id)
+        mmf_rows = await db.execute("SELECT fund_name, current_balance, annual_yield FROM investments_mmf WHERE user_id = ?", (uid,), fetch=True)
+        stock_rows = await db.execute("SELECT ticker, shares FROM investments_stocks WHERE user_id = ?", (uid,), fetch=True)
+        
+        report = ["<b>📊 INVESTMENT PORTFOLIO SUMMARY</b>\n"]
+        total_worth = 0.0
+        
+        # MMF section
+        if mmf_rows:
+            report.append("<b>🏦 Money Market Funds:</b>")
+            for r in mmf_rows:
+                bal = float(r[1])
+                yld = float(r[2])
+                daily_interest = (bal * (yld / 100)) / 365
+                total_worth += bal
+                report.append(f"• {r[0]}: KES {bal:,.2f} (Yield: {yld}%, +KES {daily_interest:,.2f}/day)")
+            report.append("")
+            
+        # Stocks section
+        if stock_rows:
+            report.append("<b>📈 NSE Stock Holdings:</b>")
+            import aiohttp
+            tickers_query = []
+            shares_map = {}
+            for r in stock_rows:
+                sym = r[0]
+                shares = float(r[1])
+                tickers_query.append(f"NSEKE:{sym}")
+                shares_map[sym] = shares
+                
+            url = "https://scanner.tradingview.com/kenya/scan"
+            payload = {
+                "symbols": {"tickers": tickers_query},
+                "columns": ["close"]
+            }
+            headers = {"User-Agent": "Mozilla/5.0"}
+            async with aiohttp.ClientSession(headers=headers) as session:
+                async with session.post(url, json=payload, timeout=5) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        if data.get("data"):
+                            for item in data["data"]:
+                                sym = item["s"].replace("NSEKE:", "")
+                                price = float(item["d"][0] if item["d"] else 0.0)
+                                shares = shares_map.get(sym, 0)
+                                val = price * shares
+                                total_worth += val
+                                report.append(f"• {sym}: {shares} shares @ KES {price:,.2f} = KES {val:,.2f}")
+                                shares_map.pop(sym, None)
+                                
+            # Handle any stocks that TradingView didn't find (delisted or OTC)
+            for sym, shares in shares_map.items():
+                report.append(f"• {sym}: {shares} shares (Price unavailable)")
+            report.append("")
+            
+        if not mmf_rows and not stock_rows:
+            return "Your investment portfolio is currently empty."
+            
+        report.append(f"<b>💰 TOTAL NET WORTH: KES {total_worth:,.2f}</b>")
+        return "\n".join(report)
+    except Exception as e:
+        return f"Failed to retrieve investment portfolio: {e}"
+
 @registry.register("fetch_github_trending", "Fetches top trending GitHub repositories. Requires 'language' (string, optional, default 'python').")
 async def fetch_github_trending(language: str = "python") -> str:
     import aiohttp

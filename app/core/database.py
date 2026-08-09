@@ -184,6 +184,32 @@ class DatabaseManager:
                 FOREIGN KEY(user_id) REFERENCES users(tg_id),
                 UNIQUE(user_id, app_id)
             )
+            """,
+            # Investments MMF
+            """
+            CREATE TABLE IF NOT EXISTS investments_mmf (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                fund_name TEXT NOT NULL,
+                account_number TEXT,
+                principal REAL NOT NULL DEFAULT 0.0,
+                current_balance REAL NOT NULL DEFAULT 0.0,
+                annual_yield REAL DEFAULT 0.0,
+                last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(tg_id)
+            )
+            """,
+            # Investments Stocks
+            """
+            CREATE TABLE IF NOT EXISTS investments_stocks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                ticker TEXT NOT NULL,
+                shares REAL NOT NULL DEFAULT 0.0,
+                average_buy_price REAL DEFAULT 0.0,
+                FOREIGN KEY(user_id) REFERENCES users(tg_id),
+                UNIQUE(user_id, ticker)
+            )
             """
         ]
 

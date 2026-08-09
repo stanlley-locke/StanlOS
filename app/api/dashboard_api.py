@@ -505,5 +505,87 @@ async def get_apps():
                 "auth_type": a[2],
                 "status": a[3],
                 "created_at": str(a[4])
-            })
     return res
+
+@router.get("/investments")
+async def get_investments():
+    admin_id = settings.ADMIN_IDS[0] if settings.ADMIN_IDS else 0
+    
+    mmf_rows = await db.execute("SELECT fund_name, account_number, principal, current_balance, annual_yield FROM investments_mmf WHERE user_id = ?", (admin_id,), fetch=True)
+    stock_rows = await db.execute("SELECT ticker, shares, average_buy_price FROM investments_stocks WHERE user_id = ?", (admin_id,), fetch=True)
+    
+    total_worth = 0.0
+    mmf_data = []
+    if mmf_rows:
+        for r in mmf_rows:
+            bal = float(r[3])
+            yld = float(r[4])
+            daily_interest = (bal * (yld / 100)) / 365
+            total_worth += bal
+            mmf_data.append({
+                "fund_name": r[0],
+                "account_number": r[1] or "",
+                "principal": float(r[2]),
+                "current_balance": bal,
+                "annual_yield": yld,
+                "daily_interest": daily_interest
+            })
+            
+    stock_data = []
+    if stock_rows:
+        import aiohttp
+        tickers_query = []
+        shares_map = {}
+        buy_price_map = {}
+        for r in stock_rows:
+            sym = r[0]
+            shares = float(r[1])
+            tickers_query.append(f"NSEKE:{sym}")
+            shares_map[sym] = shares
+            buy_price_map[sym] = float(r[2])
+            
+        url = "https://scanner.tradingview.com/kenya/scan"
+        payload = {"symbols": {"tickers": tickers_query}, "columns": ["close", "change"]}
+        try:
+            async with aiohttp.ClientSession(headers={"User-Agent": "Mozilla/5.0"}) as session:
+                async with session.post(url, json=payload, timeout=5) as resp:
+                    if resp.status == 200:
+                        td = await resp.json()
+                        if td.get("data"):
+                            for item in td["data"]:
+                                sym = item["s"].replace("NSEKE:", "")
+                                price = float(item["d"][0] if item["d"] else 0.0)
+                                change = float(item["d"][1] if len(item["d"]) > 1 else 0.0)
+                                shares = shares_map.get(sym, 0)
+                                val = price * shares
+                                total_worth += val
+                                
+                                stock_data.append({
+                                    "ticker": sym,
+                                    "shares": shares,
+                                    "current_price": price,
+                                    "change_pct": change,
+                                    "total_value": val,
+                                    "buy_price": buy_price_map.get(sym, 0.0)
+                                })
+                                shares_map.pop(sym, None)
+        except Exception as e:
+            logger.error(f"Failed to fetch live prices for investments API: {e}")
+            
+        # Unfound stocks
+        for sym, shares in shares_map.items():
+            stock_data.append({
+                "ticker": sym,
+                "shares": shares,
+                "current_price": 0.0,
+                "change_pct": 0.0,
+                "total_value": 0.0,
+                "buy_price": buy_price_map.get(sym, 0.0)
+            })
+            
+    return {
+        "success": True,
+        "total_worth": total_worth,
+        "mmf": mmf_data,
+        "stocks": stock_data
+    }

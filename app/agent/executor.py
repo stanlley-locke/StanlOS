@@ -33,7 +33,7 @@ JSON Format:
 ROLES = {
     "finance": {
         "description": "You are the Finance Agent. You strictly handle logging expenses, incomes, tracking budgets, and financial summaries. IMPORTANT: If the user asks for a 'summary', 'report', or asks to 'view' their expenses/income, DO NOT log a new expense or income. Use the 'get_financial_summary' or 'search_transactions' tool instead.",
-        "allowed_tools": ["log_expense", "log_income", "get_financial_summary", "search_transactions", "delete_transaction", "currency_converter", "crypto_tracker", "calculate", "get_stock_price", "get_nse_stock_price"]
+        "allowed_tools": ["log_expense", "log_income", "get_financial_summary", "search_transactions", "delete_transaction", "currency_converter", "crypto_tracker", "calculate", "get_stock_price", "get_nse_stock_price", "update_mmf_balance", "update_stock_shares", "get_investment_portfolio"]
     },
     "research": {
         "description": "You are the Research Agent. You specialize in finding data on the web, reading URLs, deep scraping, and answering complex questions.",

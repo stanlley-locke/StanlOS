@@ -488,6 +488,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             <ul class="nav-menu">
                 <div class="nav-section-title">Financial & Analytics</div>
                 <li class="nav-item active" onclick="switchTab('finance', this)"><i class="fa-solid fa-credit-card"></i> Finance & MPESA</li>
+                <li class="nav-item" onclick="switchTab('investments', this)"><i class="fa-solid fa-chart-pie"></i> Portfolio & Investments</li>
                 <li class="nav-item" onclick="switchTab('overview', this)"><i class="fa-solid fa-chart-line"></i> System Overview</li>
 
                 <div class="nav-section-title">Intelligence & AI</div>
@@ -613,6 +614,62 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                     </table>
                 </div>
 
+            </div>
+
+            <!-- INVESTMENTS TAB -->
+            <div id="tab-investments" class="tab-panel">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Net Worth</div>
+                        <div class="stat-value" style="color: var(--primary-blue);" id="inv-total">KES 0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total MMF Balance</div>
+                        <div class="stat-value" style="color: var(--accent-green);" id="inv-mmf">KES 0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Stock Value</div>
+                        <div class="stat-value" style="color: var(--accent-amber);" id="inv-stock">KES 0.00</div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <!-- MMF Section -->
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.05rem; margin-bottom: 16px;">Money Market Funds</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Fund Name</th>
+                                    <th>Balance</th>
+                                    <th>Yield %</th>
+                                    <th>Daily Interest</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mmf-table-body">
+                                <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Loading MMF data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Stocks Section -->
+                    <div class="table-wrapper">
+                        <h3 style="font-size: 1.05rem; margin-bottom: 16px;">NSE Stock Holdings</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Ticker</th>
+                                    <th>Shares</th>
+                                    <th>Price</th>
+                                    <th>Total Value</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stock-table-body">
+                                <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Loading Stock data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <!-- OVERVIEW TAB -->

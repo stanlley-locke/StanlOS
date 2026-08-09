@@ -78,27 +78,45 @@ def generate_bar_chart(labels: list, values: list, title: str, horizontal: bool 
     ax.set_title(title, size=14, weight="bold", pad=15)
     return _save_to_buffer()
 
-def generate_dashboard_chart(income: float, expense: float) -> BufferedInputFile:
-    """Generates a high-level income vs expense bar chart for the start menu."""
-    fig, ax = plt.subplots(figsize=(6, 3))
-    
+def generate_dashboard_chart(income: float, expense: float, stock_data: dict = None, total_worth: float = 0.0) -> BufferedInputFile:
+    """Generates a high-level income vs expense bar chart for the start menu, and optionally a portfolio pie chart."""
+    if stock_data and sum(stock_data.values()) > 0:
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+    else:
+        fig, ax1 = plt.subplots(figsize=(6, 3))
+        ax2 = None
+        
     labels = ['Income', 'Expenses']
     values = [income, expense]
     colors = ['#A6E3A1', '#F38BA8']
     
-    bars = ax.barh(labels, values, color=colors, height=0.5, edgecolor='#1E1E2E')
-    ax.invert_yaxis()
+    bars = ax1.barh(labels, values, color=colors, height=0.5, edgecolor='#1E1E2E')
+    ax1.invert_yaxis()
     
     # Add text labels on bars
     for idx, rect in enumerate(bars):
         width = rect.get_width()
-        ax.text(width + (max(values)*0.02 if max(values) > 0 else 10), rect.get_y() + rect.get_height()/2.0, f"Ksh {values[idx]:,.2f}", 
+        ax1.text(width + (max(values)*0.02 if max(values) > 0 else 10), rect.get_y() + rect.get_height()/2.0, f"Ksh {values[idx]:,.2f}", 
                 ha='left', va='center', weight='bold')
                 
-    ax.set_title("Financial Snapshot", size=12, weight="bold", pad=15)
-    ax.grid(False)
-    ax.set_xticks([])
+    ax1.set_title("Financial Snapshot", size=12, weight="bold", pad=15)
+    ax1.grid(False)
+    ax1.set_xticks([])
     
+    if ax2:
+        pie_labels = list(stock_data.keys())
+        pie_values = list(stock_data.values())
+        wedges, texts, autotexts = ax2.pie(
+            pie_values, labels=pie_labels, autopct='%1.1f%%',
+            colors=['#A6E3A1', '#89B4FA', '#F9E2AF', '#F38BA8', '#CBA6F7', '#94E2D5', '#FAB387'],
+            startangle=90, 
+            wedgeprops=dict(width=0.6, edgecolor='#1E1E2E', linewidth=2)
+        )
+        plt.setp(autotexts, size=9, weight="bold", color="#11111B")
+        plt.setp(texts, size=10, weight="bold", color="#CDD6F4")
+        ax2.set_title(f"Market Allocation\nTotal Value: KES {total_worth:,.2f}", size=12, weight="bold", pad=15, color="#A6E3A1")
+        
+    plt.tight_layout()
     return _save_to_buffer()
 
 def generate_gauge_dashboard(cpu: float, ram: float, disk: float) -> BufferedInputFile:
@@ -149,4 +167,23 @@ def generate_podium_chart(users: list, points: list) -> BufferedInputFile:
     ax.set_title("Top 5 Gamification Leaderboard", size=14, weight="bold", pad=15)
     ax.grid(axis='x') # Only horizontal grid
     
+    return _save_to_buffer()
+
+def generate_portfolio_chart(data: dict, total_worth: float) -> BufferedInputFile:
+    """Generates a pie chart for the investment portfolio allocation."""
+    labels = list(data.keys())
+    values = list(data.values())
+    
+    fig, ax = plt.subplots(figsize=(7, 7))
+    wedges, texts, autotexts = ax.pie(
+        values, labels=labels, autopct='%1.1f%%',
+        colors=['#A6E3A1', '#89B4FA', '#F9E2AF', '#F38BA8', '#CBA6F7', '#94E2D5', '#FAB387'],
+        startangle=90, 
+        wedgeprops=dict(width=0.6, edgecolor='#1E1E2E', linewidth=2)
+    )
+    
+    plt.setp(autotexts, size=10, weight="bold", color="#11111B")
+    plt.setp(texts, size=12, weight="bold", color="#CDD6F4")
+    
+    ax.set_title(f"Market Allocation\nTotal Value: KES {total_worth:,.2f}", size=15, weight="bold", pad=20, color="#A6E3A1")
     return _save_to_buffer()
