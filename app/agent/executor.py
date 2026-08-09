@@ -36,11 +36,11 @@ ROLES = {
     },
     "research": {
         "description": "You are the Research Agent. You specialize in finding data on the web, reading URLs, deep scraping, and answering complex questions.",
-        "allowed_tools": ["search_web", "read_url", "scrape_and_synthesize", "wiki_search", "search_memory", "get_weather", "translate_text"]
+        "allowed_tools": ["search_web", "read_url", "scrape_and_synthesize", "search_news", "wiki_search", "search_memory", "get_weather", "translate_text"]
     },
     "general": {
         "description": "You are the General Operations Agent. You handle tasks, contacts, system stats, and general orchestration.",
-        "allowed_tools": ["add_task", "list_tasks", "delete_task", "complete_task", "clear_tasks", "remember_fact", "recall_fact", "get_system_stats", "search_songs", "download_song"]
+        "allowed_tools": ["add_task", "list_tasks", "delete_task", "complete_task", "clear_tasks", "remember_fact", "recall_fact", "schedule_reminder", "get_system_stats", "search_songs", "download_song"]
     }
 }
 
@@ -69,9 +69,24 @@ class SwarmManager:
         if status_callback:
             await status_callback(f"🧠 <b>SWARM MANAGER</b>: Routing task to <code>{agent_type.upper()}</code> Agent...")
             
-        # 2. Execute via specialized agent
+        # 2. Auto-RAG Background Search
+        rag_context = None
+        try:
+            from app.services.knowledge_base import kb_service
+            if user_id:
+                rag_context = await kb_service.get_context_for_query(user_id, user_query)
+        except Exception as e:
+            logger.error(f"Auto-RAG failed: {e}")
+            
+        # 3. Execute via specialized agent
         executor = AgentExecutor(agent_type)
-        return await executor.run(user_query, user_id, status_callback, chat_history)
+        
+        # Inject RAG context into user query
+        augmented_query = user_query
+        if rag_context:
+            augmented_query = f"Context from Memory:\n{rag_context}\n\nUser Query:\n{user_query}"
+            
+        return await executor.run(augmented_query, user_id, status_callback, chat_history)
 
 class AgentExecutor:
     def __init__(self, agent_type: str = "general"):

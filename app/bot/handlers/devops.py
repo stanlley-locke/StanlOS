@@ -104,27 +104,24 @@ async def cmd_stats(event: Message | CallbackQuery):
     disk = shutil.disk_usage("/")
     disk_pct = ((disk.total - disk.free) / disk.total) * 100
     
-    cpu_bar = make_progress_bar(cpu, length=10)
-    ram_bar = make_progress_bar(ram.percent, length=10)
-    disk_bar = make_progress_bar(disk_pct, length=10)
-    
     uptime = datetime.fromtimestamp(psutil.boot_time()).strftime('%Y-%m-%d %H:%M')
     
     text = (
         f"<b>SERVER PERFORMANCE METRICS</b>\n"
-        
-        f"<b>CPU Usage:</b> {cpu_bar}\n"
-        f"<b>RAM Usage:</b> {ram_bar}\n"
-        f"  └ Used: {ram.used // (1024**2)}MB / {ram.total // (1024**2)}MB\n\n"
-        f"<b>Disk Space:</b> {disk_bar}\n"
-        f"  └ Free: {disk.free // (1024**3)}GB / {disk.total // (1024**3)}GB\n\n"
-        f"<b>Server Uptime:</b> <code>{uptime}</code>"
+        f"<b>Uptime:</b> <code>{uptime}</code>\n\n"
+        f"<b>RAM:</b> {ram.used // (1024**2)}MB / {ram.total // (1024**2)}MB\n"
+        f"<b>Disk:</b> {disk.free // (1024**3)}GB Free / {disk.total // (1024**3)}GB Total"
     )
+    
+    from app.utils.charts import generate_gauge_dashboard
+    chart_file = generate_gauge_dashboard(cpu, ram.percent, disk_pct)
+    
     kb = build_sub_menu_kb([])
     if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
+        await event.answer_photo(photo=chart_file, caption=text, reply_markup=kb)
     else:
-        await event.message.edit_text(text, reply_markup=kb)
+        await event.message.delete()
+        await event.message.answer_photo(photo=chart_file, caption=text, reply_markup=kb)
 
 @router.callback_query(F.data == "devops:health")
 @router.message(Command("health"))

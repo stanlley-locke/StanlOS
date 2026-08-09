@@ -211,16 +211,30 @@ async def cmd_leaderboard(event: Message | CallbackQuery):
     
     if not top_users:
         text += "No high scores registered yet."
-    else:
-        medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
-        for idx, u in enumerate(top_users):
-            fname, uname, pts = u
-            name = fname or (f"@{uname}" if uname else "Anonymous")
-            medal = medals[idx] if idx < len(medals) else "🏅"
-            text += f"{medal} <b>{safe_html(name)}</b> — <code>{pts or 0} PTS</code>\n"
-            
+        kb = build_sub_menu_kb([])
+        if isinstance(event, Message):
+            await event.answer(text, reply_markup=kb)
+        else:
+            await event.message.edit_text(text, reply_markup=kb)
+        return
+        
+    labels = []
+    points = []
+    medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+    for idx, u in enumerate(top_users):
+        fname, uname, pts = u
+        name = fname or (f"@{uname}" if uname else "Anonymous")
+        medal = medals[idx] if idx < len(medals) else "🏅"
+        text += f"{medal} <b>{safe_html(name)}</b> — <code>{pts or 0} PTS</code>\n"
+        labels.append((name[:10] + "..") if len(name) > 10 else name)
+        points.append(pts or 0)
+        
+    from app.utils.charts import generate_podium_chart
+    chart_file = generate_podium_chart(labels, points)
+        
     kb = build_sub_menu_kb([])
     if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
+        await event.answer_photo(photo=chart_file, caption=text, reply_markup=kb)
     else:
-        await event.message.edit_text(text, reply_markup=kb)
+        await event.message.delete()
+        await event.message.answer_photo(photo=chart_file, caption=text, reply_markup=kb)

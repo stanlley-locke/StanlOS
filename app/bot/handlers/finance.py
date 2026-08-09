@@ -9,7 +9,8 @@ from aiogram.fsm.state import StatesGroup, State
 
 from app.core.database import db
 from app.services.ai_cloudflare import ai_client
-from app.utils.formatters import SYMBOLS, build_sub_menu_kb, make_progress_bar, safe_html
+from app.utils.formatters import SYMBOLS, build_sub_menu_kb, safe_html
+from app.utils.charts import generate_pie_chart, generate_line_chart, generate_bar_chart
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -259,17 +260,27 @@ async def cmd_summary(event: Message | CallbackQuery):
     
     if not cat_results:
         text += "• No expenses logged yet."
-    else:
-        for cat, amt in cat_results:
-            pct = (amt / total_expense * 100) if total_expense > 0 else 0
-            bar = make_progress_bar(pct, length=8)
-            text += f"• <b>{cat.upper().ljust(12)}</b> Ksh {amt:,.2f}\n  └ {bar}\n\n"
+        kb = build_sub_menu_kb([])
+        if isinstance(event, Message):
+            await event.answer(text, reply_markup=kb)
+        else:
+            await event.message.edit_text(text, reply_markup=kb)
+        return
+        
+    data_dict = {}
+    for cat, amt in cat_results:
+        pct = (amt / total_expense * 100) if total_expense > 0 else 0
+        text += f"• <b>{cat.upper().ljust(12)}</b> Ksh {amt:,.2f} ({pct:.1f}%)\n"
+        data_dict[cat.upper()] = amt
+            
+    chart_file = generate_pie_chart(data_dict, "Expense Breakdown")
             
     kb = build_sub_menu_kb([])
     if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
+        await event.answer_photo(photo=chart_file, caption=text, reply_markup=kb)
     else:
-        await event.message.edit_text(text, reply_markup=kb)
+        await event.message.delete()
+        await event.message.answer_photo(photo=chart_file, caption=text, reply_markup=kb)
 
 @router.callback_query(F.data == "fin:trends")
 @router.message(Command("trends"))
@@ -280,25 +291,42 @@ async def cb_trends(event: Message | CallbackQuery):
         (user_id,), fetch=True
     )
     
-    text = "<b>Daily Spending Trends</b>\n\n"
+    text = "<b>Daily Spending Trends (Last 10 Days)</b>\n\n"
     if not daily_rows:
         text += "No trend data recorded yet."
-    else:
-        daily_map = {}
-        for r in daily_rows:
-            d_str, ttype, amt = r[0], r[1], r[2] or 0.0
-            if d_str not in daily_map:
-                daily_map[d_str] = {"income": 0.0, "expense": 0.0}
-            daily_map[d_str][ttype] = amt
-            
-        for date_key, val in daily_map.items():
-            text += f"• <b>{date_key}:</b> -Ksh {val['expense']:,.2f} | +Ksh {val['income']:,.2f}\n"
-            
+        kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Finance", callback_data="menu:finance")]])
+        if isinstance(event, Message):
+            await event.answer(text, reply_markup=kb)
+        else:
+            await event.message.edit_text(text, reply_markup=kb)
+        return
+        
+    daily_map = {}
+    for r in daily_rows:
+        d_str, ttype, amt = r[0], r[1], r[2] or 0.0
+        if d_str not in daily_map:
+            daily_map[d_str] = {"income": 0.0, "expense": 0.0}
+        daily_map[d_str][ttype] = amt
+        
+    dates = sorted(list(daily_map.keys()))
+    inc_list = [daily_map[d]["income"] for d in dates]
+    exp_list = [daily_map[d]["expense"] for d in dates]
+    
+    # Format labels for chart
+    chart_dates = [d[-5:] for d in dates] # MM-DD
+    
+    for date_key in reversed(dates):
+        val = daily_map[date_key]
+        text += f"• <b>{date_key}:</b> -Ksh {val['expense']:,.2f} | +Ksh {val['income']:,.2f}\n"
+        
+    chart_file = generate_line_chart(chart_dates, inc_list, exp_list, "Income vs Expenses")
+        
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Finance", callback_data="menu:finance")]])
     if isinstance(event, Message):
-        await event.answer(text, reply_markup=kb)
+        await event.answer_photo(photo=chart_file, caption=text, reply_markup=kb)
     else:
-        await event.message.edit_text(text, reply_markup=kb)
+        await event.message.delete()
+        await event.message.answer_photo(photo=chart_file, caption=text, reply_markup=kb)
 
 @router.callback_query(F.data == "fin:vendors")
 async def cb_vendors(cb: CallbackQuery):
@@ -308,15 +336,25 @@ async def cb_vendors(cb: CallbackQuery):
         (user_id,), fetch=True
     )
     
-    text = "<b>Top Expense Vendors & Reasons</b>\n\n"
+    text = "<b>Top Expense Vendors</b>\n\n"
     if not vendor_rows:
         text += "No vendor data recorded yet."
-    else:
-        for idx, (v, amt, cnt) in enumerate(vendor_rows, 1):
-            text += f"{idx}. <b>{safe_html(v or 'General')}</b>: Ksh {amt:,.2f} ({cnt} txns)\n"
-            
+        kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Finance", callback_data="menu:finance")]])
+        return await cb.message.edit_text(text, reply_markup=kb)
+        
+    labels = []
+    values = []
+    for idx, (v, amt, cnt) in enumerate(vendor_rows, 1):
+        clean_v = safe_html(v or 'General')
+        text += f"{idx}. <b>{clean_v}</b>: Ksh {amt:,.2f} ({cnt} txns)\n"
+        labels.append((v or 'General')[:15])
+        values.append(amt)
+        
+    chart_file = generate_bar_chart(labels[::-1], values[::-1], "Top Vendors (Ksh)", horizontal=True, color="#CBA6F7")
+        
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Finance", callback_data="menu:finance")]])
-    await cb.message.edit_text(text, reply_markup=kb)
+    await cb.message.delete()
+    await cb.message.answer_photo(photo=chart_file, caption=text, reply_markup=kb)
 
 @router.callback_query(F.data == "fin:history")
 @router.message(Command("history", "txns"))

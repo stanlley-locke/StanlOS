@@ -495,6 +495,45 @@ async def scrape_and_synthesize(user_id: int | str, url: str) -> str:
     except Exception as e:
         return f"Scraping error: {e}"
 
+@registry.register("search_news", "Fetches live news headlines for a specific topic/keyword. Requires 'topic' (string).")
+async def search_news(topic: str) -> str:
+    import feedparser
+    import urllib.parse
+    try:
+        query = urllib.parse.quote(topic)
+        feed = feedparser.parse(f"https://news.google.com/rss/search?q={query}&hl=en-US&gl=US&ceid=US:en")
+        if not feed.entries:
+            return f"No news found for '{topic}'."
+            
+        news_items = []
+        for entry in feed.entries[:5]:
+            news_items.append(f"- {entry.title} ({entry.link})")
+            
+        return f"Top News for '{topic}':\n" + "\n".join(news_items)
+    except Exception as e:
+        return f"Error fetching news: {e}"
+
+@registry.register("schedule_reminder", "Schedules a push notification reminder for a future time. Requires 'user_id' (int), 'message' (string), and 'delay_minutes' (int).")
+async def schedule_reminder(user_id: int | str, message: str, delay_minutes: int | str) -> str:
+    from app.services.scheduler import scheduler_service
+    from app.bot.dispatcher import bot
+    from datetime import datetime, timedelta
+    try:
+        uid = int(user_id)
+        delay = int(delay_minutes)
+        run_date = datetime.now() + timedelta(minutes=delay)
+        
+        async def send_reminder():
+            try:
+                await bot.send_message(chat_id=uid, text=f"🔔 <b>REMINDER:</b>\n\n{message}")
+            except Exception as e:
+                logger.error(f"Failed to send reminder: {e}")
+                
+        scheduler_service.scheduler.add_job(send_reminder, 'date', run_date=run_date)
+        return f"Reminder successfully scheduled for {delay} minutes from now."
+    except Exception as e:
+        return f"Failed to schedule reminder: {e}"
+
 # Dynamically load all modular apps (Composio style architecture)
 try:
     import app.apps

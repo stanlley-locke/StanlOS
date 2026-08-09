@@ -32,3 +32,4 @@ psutil
 colorama
 feedparser
 apscheduler
+matplotlib
