@@ -264,6 +264,32 @@ async def search_transactions(user_id: int | str, query: str = "") -> str:
     except Exception as e:
         return f"Failed to search transactions: {e}"
 
+@registry.register("delete_transaction", "Deletes a recent financial transaction (expense or income). Requires 'user_id' (int). Provide 'amount' (float) and/or 'transaction_type' (string) to specify which one to delete.")
+async def delete_transaction(user_id: int | str, amount: float | str = None, transaction_type: str = None) -> str:
+    from app.core.database import db
+    try:
+        uid = int(user_id)
+        
+        sql_select = "SELECT id, amount, transaction_type, vendor FROM transactions WHERE user_id = ?"
+        params = [uid]
+        if amount:
+            sql_select += " AND amount = ?"
+            params.append(abs(float(amount)))
+        if transaction_type:
+            sql_select += " AND transaction_type = ?"
+            params.append(transaction_type.strip().lower())
+        sql_select += " ORDER BY transaction_date DESC LIMIT 1"
+        
+        rows = await db.execute(sql_select, tuple(params), fetch=True)
+        if not rows:
+            return "No matching transaction found to delete."
+            
+        tid, tamount, ttype, tvendor = rows[0]
+        await db.execute("DELETE FROM transactions WHERE id = ?", (tid,))
+        return f"Successfully deleted the {ttype} of Ksh {tamount} ({tvendor})."
+    except Exception as e:
+        return f"Failed to delete transaction: {e}"
+
 @registry.register("add_task", "Adds a new task/assignment. Requires 'user_id' (int), 'title' (string), and 'due_date' (string, e.g. 'Tomorrow 5pm').")
 async def add_task(user_id: int | str, title: str, due_date: str) -> str:
     from app.core.database import db

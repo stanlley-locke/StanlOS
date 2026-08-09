@@ -32,7 +32,7 @@ JSON Format:
 ROLES = {
     "finance": {
         "description": "You are the Finance Agent. You strictly handle logging expenses, incomes, tracking budgets, and financial summaries.",
-        "allowed_tools": ["log_expense", "log_income", "get_financial_summary", "search_transactions", "currency_converter", "crypto_tracker", "calculate"]
+        "allowed_tools": ["log_expense", "log_income", "get_financial_summary", "search_transactions", "delete_transaction", "currency_converter", "crypto_tracker", "calculate"]
     },
     "research": {
         "description": "You are the Research Agent. You specialize in finding data on the web, reading URLs, deep scraping, and answering complex questions.",
