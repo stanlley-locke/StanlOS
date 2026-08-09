@@ -733,6 +733,7 @@ async def get_investment_portfolio_data(user_id: int | str) -> tuple[str, dict, 
             import aiohttp
             tickers_query = []
             shares_map = {}
+            total_stocks_worth = 0.0
             for r in stock_rows:
                 sym = r[0]
                 shares = float(r[1])
@@ -759,11 +760,14 @@ async def get_investment_portfolio_data(user_id: int | str) -> tuple[str, dict, 
                                 if val > 0:
                                     allocation[sym] = val
                                 report.append(f"• {sym}: {shares} shares @ KES {price:,.2f} = KES {val:,.2f}")
+                                total_stocks_worth += val
                                 shares_map.pop(sym, None)
                                 
             # Handle any stocks that TradingView didn't find (delisted or OTC)
             for sym, shares in shares_map.items():
                 report.append(f"• {sym}: {shares} shares (Price unavailable)")
+            
+            report.append(f"\n<b>Total Stocks Value:</b> KES {total_stocks_worth:,.2f}")
             report.append("")
             
         if not mmf_rows and not stock_rows:
