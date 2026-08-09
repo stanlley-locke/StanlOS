@@ -31,3 +31,4 @@ python-dateutil
 psutil
 colorama
 feedparser
+apscheduler

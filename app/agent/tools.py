@@ -440,6 +440,36 @@ async def translate_text(text: str, target_language: str = "Swahili") -> str:
     translated = await ai_client.generate_text(messages)
     return translated.strip() if translated else f"Translation ({target_language}): {text}"
 
+@registry.register("scrape_and_synthesize", "Deep web browsing tool. Reads a URL, synthesizes its core content, and permanently saves the synthesized knowledge into your RAG memory. Requires 'user_id' (int) and 'url' (string).")
+async def scrape_and_synthesize(user_id: int | str, url: str) -> str:
+    from app.services.web_service import web_service
+    from app.services.ai_cloudflare import ai_client
+    from app.core.database import db
+    try:
+        uid = int(user_id)
+        # Extract deep text
+        raw_text = await web_service.extract_text_from_url(url)
+        if "Error:" in raw_text:
+            return raw_text
+            
+        # Synthesize via AI
+        prompt = f"Synthesize and extract the most valuable, factual information from the following webpage text. Create a dense summary suitable for a knowledge base:\n\n{raw_text[:8000]}"
+        messages = [{"role": "system", "content": prompt}]
+        summary = await ai_client.generate_text(messages)
+        
+        if not summary:
+            return "Failed to synthesize content."
+            
+        # Save to RAG memory (documents)
+        query = "INSERT INTO documents (user_id, file_name, file_type, raw_text, metadata_json) VALUES (?, ?, ?, ?, ?)"
+        import json
+        metadata = json.dumps({"source": url, "type": "web_scrape"})
+        await db.execute(query, (uid, f"Web Scrape: {url[:30]}", "web", summary, metadata))
+        
+        return f"Successfully scraped and synthesized {url}. Knowledge has been permanently stored in your RAG memory."
+    except Exception as e:
+        return f"Scraping error: {e}"
+
 # Dynamically load all modular apps (Composio style architecture)
 try:
     import app.apps

@@ -11,6 +11,7 @@ from app.ui.dashboard_html import DASHBOARD_HTML
 from app.bot.dispatcher import set_webhook, delete_webhook, set_bot_commands, dp, bot
 from app.core.database import db
 from app.services.userbot import userbot_service
+from app.services.scheduler import scheduler_service
 
 logging.basicConfig(
     level=settings.LOG_LEVEL,
@@ -31,6 +32,7 @@ async def lifespan(app: FastAPI):
 
     await db.initialize_schema()
     await db.start_keep_alive()
+    scheduler_service.start()
     await userbot_service.start()
     await set_bot_commands()
     
@@ -51,6 +53,7 @@ async def lifespan(app: FastAPI):
             pass
         polling_task.cancel()
     await delete_webhook()
+    scheduler_service.stop()
     await userbot_service.stop()
     await db.stop_keep_alive()
 
