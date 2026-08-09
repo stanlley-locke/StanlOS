@@ -505,6 +505,7 @@ async def get_apps():
                 "auth_type": a[2],
                 "status": a[3],
                 "created_at": str(a[4])
+            })
     return res
 
 @router.get("/investments")
