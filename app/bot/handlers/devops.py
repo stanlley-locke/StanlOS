@@ -14,6 +14,8 @@ router = Router()
 logger = logging.getLogger(__name__)
 
 async def _is_admin(user_id: int) -> bool:
+    if user_id in settings.ADMIN_IDS:
+        return True
     rows = await db.execute("SELECT role FROM users WHERE tg_id = ?", (user_id,), fetch=True)
     return rows and rows[0][0] == 'admin'
 

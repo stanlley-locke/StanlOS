@@ -126,7 +126,9 @@ class AgentExecutor:
             
             response_json = await ai_client.generate_json(messages)
             if not response_json or not isinstance(response_json, dict):
-                return last_tool_observation or "Task processed."
+                if not ai_client.account_id or not ai_client.api_token:
+                    return f"{SYMBOLS['alert']} AI backend offline: Cloudflare API credentials missing."
+                return last_tool_observation or "Agent reasoning failed or API timed out."
                 
             thought = response_json.get("thought", "Analyzing...")
             action = response_json.get("action")
