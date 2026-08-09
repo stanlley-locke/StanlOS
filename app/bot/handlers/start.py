@@ -189,6 +189,7 @@ async def cb_forecasts(cb: CallbackQuery):
         f"• <b>Summarize:</b> <code>/summarize [long text]</code>"
     )
     buttons = [
+        [("Top Market Movers", "menu:market_movers")],
         [("Check Weather", "menu:weather"), ("Check Crypto", "menu:crypto_quick")],
         [("US Stocks", "menu:stock_quick"), ("NSE Kenya Stocks", "menu:nse_quick")],
         [("Convert Currency", "menu:convert_quick"), ("Convert Unit", "menu:unit_quick")],
@@ -393,16 +394,29 @@ async def cmd_summarize(message: Message):
         status = await message.answer("Summarizing...")
         res = await summarize_text(parts[1])
         await status.edit_text(f"<b>📝 TEXT SUMMARY</b>\n\n{res}", reply_markup=kb)
-    else:
         await message.answer("<b>📝 TEXT SUMMARY</b>\n\nUsage: <code>/summarize &lt;long text&gt;</code>", reply_markup=kb)
 
+@router.callback_query(F.data == "menu:market_movers")
+async def cb_market_movers(cb: CallbackQuery):
+    from app.agent.tools import analyze_market_opportunities
+    status = await cb.message.answer(f"{SYMBOLS['ai']} Analyzing live NSE market movers...")
+    res = await analyze_market_opportunities()
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Forecasts", callback_data="menu:forecasts")]])
+    await smart_edit(status, res, reply_markup=kb)
+
 @router.message(Command("investments"))
-async def cmd_investments(message: Message):
+@router.callback_query(F.data == "menu:investments")
+async def cmd_investments(event: Message | CallbackQuery):
+    user_id = event.from_user.id
     from app.agent.tools import get_investment_portfolio
-    status = await message.answer(f"{SYMBOLS['ai']} Fetching live market data...")
-    res = await get_investment_portfolio(message.from_user.id)
-    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
-    await status.edit_text(res, reply_markup=kb)
+    if isinstance(event, Message):
+        status = await event.answer(f"{SYMBOLS['ai']} Fetching live market data...")
+    else:
+        status = await event.message.answer(f"{SYMBOLS['ai']} Fetching live market data...")
+        
+    res = await get_investment_portfolio(user_id)
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Finance", callback_data="menu:finance")]])
+    await smart_edit(status, res, reply_markup=kb)
 
 @router.message(Command("buy_stock", "sell_stock", "update_stock"))
 async def cmd_update_stock(message: Message):

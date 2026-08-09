@@ -44,6 +44,7 @@ async def cb_finance_menu(event: Message | CallbackQuery):
         f"• <code>/history</code> - Transaction history & delete"
     )
     buttons = [
+        [("Portfolio & MMF", "menu:investments")],
         [("Log Expense", "fin:action_expense"), ("Log Income", "fin:action_income")],
         [("Category Breakdown", "fin:summary"), ("Spending Trends", "fin:trends")],
         [("Transaction History", "fin:history"), ("Top Vendors", "fin:vendors")],

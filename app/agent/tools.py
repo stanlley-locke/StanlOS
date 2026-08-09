@@ -764,10 +764,40 @@ async def get_investment_portfolio(user_id: int | str) -> str:
             report.append("")
             
         if not mmf_rows and not stock_rows:
-            return "Your investment portfolio is currently empty."
+            report.append("Your investment portfolio is currently empty.")
             
-        report.append(f"<b>💰 TOTAL NET WORTH: KES {total_worth:,.2f}</b>")
-        return "\n".join(report)
+        report.append(f"\n<b>💰 TOTAL NET WORTH: KES {total_worth:,.2f}</b>\n")
+        
+        # --- Add Market Movers ---
+        report.append("<b>🚀 Top NSE Gainers Today:</b>")
+        try:
+            async with aiohttp.ClientSession(headers={"User-Agent": "Mozilla/5.0"}) as session:
+                payload = {"columns": ["name", "close", "change"], "sort": {"sortBy": "change", "sortOrder": "desc"}, "range": [0, 3]}
+                async with session.post("https://scanner.tradingview.com/kenya/scan", json=payload, timeout=3) as resp:
+                    data = await resp.json()
+                    for item in data.get("data", []):
+                        sym = item["s"].replace("NSEKE:", "")
+                        price = item["d"][1]
+                        chg = item["d"][2]
+                        report.append(f"• {sym}: KES {price} <span style='color:green'>(+{chg:.2f}%)</span>")
+        except Exception:
+            pass
+
+        report.append("\n<b>🔻 Top NSE Losers Today:</b>")
+        try:
+            async with aiohttp.ClientSession(headers={"User-Agent": "Mozilla/5.0"}) as session:
+                payload = {"columns": ["name", "close", "change"], "sort": {"sortBy": "change", "sortOrder": "asc"}, "range": [0, 3]}
+                async with session.post("https://scanner.tradingview.com/kenya/scan", json=payload, timeout=3) as resp:
+                    data = await resp.json()
+                    for item in data.get("data", []):
+                        sym = item["s"].replace("NSEKE:", "")
+                        price = item["d"][1]
+                        chg = item["d"][2]
+                        report.append(f"• {sym}: KES {price} <span style='color:red'>({chg:.2f}%)</span>")
+        except Exception:
+            pass
+
+        return "\n".join(report).replace("<span style='color:green'>", "").replace("<span style='color:red'>", "").replace("</span>", "")
     except Exception as e:
         return f"Failed to retrieve investment portfolio: {e}"
 
@@ -808,6 +838,50 @@ async def summarize_text(text: str) -> str:
         return f"Summary:\n{summary}"
     except Exception as e:
         return f"Summarization error: {e}"
+
+@registry.register("analyze_market_opportunities", "Analyzes live NSE market data (gainers, losers, high volume) and returns AI insights on what stocks to purchase.")
+async def analyze_market_opportunities() -> str:
+    import aiohttp
+    from app.services.ai_cloudflare import ai_client
+    
+    market_data = []
+    headers = {"User-Agent": "Mozilla/5.0"}
+    
+    try:
+        async with aiohttp.ClientSession(headers=headers) as session:
+            # Get Top Gainers
+            payload = {"columns": ["name", "close", "change", "volume"], "sort": {"sortBy": "change", "sortOrder": "desc"}, "range": [0, 5]}
+            async with session.post("https://scanner.tradingview.com/kenya/scan", json=payload, timeout=5) as resp:
+                data = await resp.json()
+                market_data.append("TOP GAINERS:")
+                for item in data.get("data", []):
+                    market_data.append(f"{item['d'][0]}: KES {item['d'][1]} (Change: {item['d'][2]:.2f}%, Vol: {item['d'][3]})")
+                    
+            # Get Top Losers
+            payload = {"columns": ["name", "close", "change", "volume"], "sort": {"sortBy": "change", "sortOrder": "asc"}, "range": [0, 5]}
+            async with session.post("https://scanner.tradingview.com/kenya/scan", json=payload, timeout=5) as resp:
+                data = await resp.json()
+                market_data.append("\nTOP LOSERS:")
+                for item in data.get("data", []):
+                    market_data.append(f"{item['d'][0]}: KES {item['d'][1]} (Change: {item['d'][2]:.2f}%, Vol: {item['d'][3]})")
+    except Exception as e:
+        return f"Failed to fetch market data: {e}"
+
+    raw_data_str = "\n".join(market_data)
+    prompt = f"""
+    You are a professional financial advisor analyzing the Nairobi Securities Exchange (NSE).
+    Here is the live market data for today's top gainers and losers:
+    
+    {raw_data_str}
+    
+    Based on this technical data, provide a brief, actionable insight on which stocks look like good purchase opportunities (either momentum buys on gainers, or value buys on losers). 
+    Format the response cleanly in HTML for Telegram, using bold tags (<b>) and bullet points. Keep it concise.
+    """
+    
+    messages = [{"role": "system", "content": prompt}]
+    insights = await ai_client.generate_text(messages)
+    
+    return f"<b>📈 NSE MARKET INSIGHTS</b>\n\n{raw_data_str}\n\n<b>AI Analysis:</b>\n{insights}"
 
 # Dynamically load all modular apps (Composio style architecture)
 try:
