@@ -96,11 +96,11 @@ async def cmd_help(event: Message | CallbackQuery):
     text = (
         f"<b>StanlOS Command Reference</b>\n\n"
         f"• <b>Tasks:</b> /tasks, /assign &lt;title&gt;, /clear_tasks\n"
-        f"• <b>Finance:</b> /finance, /expense &lt;amt vendor&gt;, /income &lt;amt source&gt;, /summary, /history\n"
-        f"• <b>Tools:</b> /convert 100 USD KES, /crypto BTC, /translate Swahili text, /wiki concept\n"
+        f"• <b>Finance:</b> /finance, /expense, /income, /summary, /stock TSLA, /nse SCOM, /crypto BTC\n"
+        f"• <b>Tools:</b> /convert 100 USD KES, /unit 10 km mi, /time, /qr &lt;url&gt;\n"
+        f"• <b>Research:</b> /wiki concept, /github python, /summarize &lt;text&gt;\n"
         f"• <b>Memory:</b> /note &lt;text&gt;, /find &lt;query&gt;, /memory\n"
-        f"• <b>CRM:</b> /contact &lt;name&gt;, /network\n"
-        f"• <b>Media:</b> /yt &lt;url&gt; (YouTube/TikTok), PDF upload\n"
+        f"• <b>CRM & Media:</b> /contact &lt;name&gt;, /yt &lt;url&gt;\n"
         f"• <b>System:</b> /devops, /stats, /help"
     )
     kb = InlineKeyboardMarkup(inline_keyboard=[
@@ -135,15 +135,25 @@ async def cb_workload(cb: CallbackQuery):
 @router.callback_query(F.data == "menu:forecasts")
 async def cb_forecasts(cb: CallbackQuery):
     text = (
-        f"<b>Forecasts & Live Information</b>\n\n"
-        f"• <b>Weather Forecast:</b> <code>/weather Nairobi</code>\n"
-        f"• <b>Crypto Market Prices:</b> <code>/crypto BTC</code>\n"
-        f"• <b>Currency Exchange:</b> <code>/convert 100 USD KES</code>\n"
-        f"• <b>Wikipedia Lookup:</b> <code>/wiki Quantum Computing</code>"
+        f"<b>Tools, Forecasts & Live Information</b>\n\n"
+        f"• <b>Weather:</b> <code>/weather Nairobi</code>\n"
+        f"• <b>Stocks (US):</b> <code>/stock TSLA</code>\n"
+        f"• <b>Stocks (NSE):</b> <code>/nse SCOM</code>\n"
+        f"• <b>Crypto:</b> <code>/crypto BTC</code>\n"
+        f"• <b>Currency Convert:</b> <code>/convert 100 USD KES</code>\n"
+        f"• <b>Unit Convert:</b> <code>/unit 10 km mi</code>\n"
+        f"• <b>Time:</b> <code>/time</code>\n"
+        f"• <b>Wikipedia:</b> <code>/wiki Quantum Computing</code>\n"
+        f"• <b>QR Code:</b> <code>/qr https://google.com</code>\n"
+        f"• <b>GitHub:</b> <code>/github python</code>\n"
+        f"• <b>Summarize:</b> <code>/summarize [long text]</code>"
     )
     buttons = [
         [("Check Weather", "menu:weather"), ("Check Crypto", "menu:crypto_quick")],
-        [("Convert Currency", "menu:convert_quick"), ("Wikipedia Search", "menu:wiki_quick")]
+        [("US Stocks", "menu:stock_quick"), ("NSE Kenya Stocks", "menu:nse_quick")],
+        [("Convert Currency", "menu:convert_quick"), ("Convert Unit", "menu:unit_quick")],
+        [("Check Time", "menu:time_quick"), ("Wikipedia Search", "menu:wiki_quick")],
+        [("Generate QR Code", "menu:qr_quick"), ("GitHub Trending", "menu:github_quick")]
     ]
     kb = build_sub_menu_kb(buttons)
     await smart_edit(cb, text, reply_markup=kb)
@@ -254,3 +264,94 @@ async def cmd_clear_tasks(message: Message):
     res = await clear_tasks(user_id)
     kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
     await message.answer(f"<b>TASK LIST WIPED</b>\n\n{res}", reply_markup=kb)
+
+@router.message(Command("time"))
+@router.callback_query(F.data == "menu:time_quick")
+async def cmd_time(event: Message | CallbackQuery):
+    from app.agent.tools import get_current_time
+    res = await get_current_time()
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
+    text = f"<b>🕒 CURRENT TIME</b>\n\n{res}"
+    await smart_edit(event, text, reply_markup=kb)
+
+@router.message(Command("unit"))
+@router.callback_query(F.data == "menu:unit_quick")
+async def cmd_unit(event: Message | CallbackQuery):
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
+    if isinstance(event, Message):
+        parts = event.text.split()
+        if len(parts) >= 4:
+            from app.agent.tools import unit_converter
+            res = await unit_converter(parts[1], parts[2], parts[3])
+            return await event.answer(f"<b>📏 UNIT CONVERTER</b>\n\n{res}", reply_markup=kb)
+            
+    text = "<b>📏 UNIT CONVERTER</b>\n\nUsage: <code>/unit &lt;value&gt; &lt;from&gt; &lt;to&gt;</code>\nExample: <code>/unit 10 km mi</code>"
+    await smart_edit(event, text, reply_markup=kb)
+
+@router.message(Command("qr"))
+@router.callback_query(F.data == "menu:qr_quick")
+async def cmd_qr(event: Message | CallbackQuery):
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
+    if isinstance(event, Message):
+        parts = event.text.split(maxsplit=1)
+        if len(parts) > 1:
+            from app.agent.tools import generate_qr_code
+            await generate_qr_code(event.from_user.id, parts[1])
+            return
+            
+    text = "<b>⬛ QR GENERATOR</b>\n\nUsage: <code>/qr &lt;data_or_url&gt;</code>\nExample: <code>/qr https://google.com</code>"
+    await smart_edit(event, text, reply_markup=kb)
+
+@router.message(Command("stock"))
+@router.callback_query(F.data == "menu:stock_quick")
+async def cmd_stock(event: Message | CallbackQuery):
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
+    if isinstance(event, Message):
+        parts = event.text.split(maxsplit=1)
+        if len(parts) > 1:
+            from app.agent.tools import get_stock_price
+            res = await get_stock_price(parts[1])
+            return await event.answer(f"<b>📈 US STOCK MARKET</b>\n\n{res}", reply_markup=kb)
+            
+    text = "<b>📈 US STOCK MARKET</b>\n\nUsage: <code>/stock &lt;ticker&gt;</code>\nExample: <code>/stock TSLA</code>"
+    await smart_edit(event, text, reply_markup=kb)
+
+@router.message(Command("nse"))
+@router.callback_query(F.data == "menu:nse_quick")
+async def cmd_nse(event: Message | CallbackQuery):
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
+    if isinstance(event, Message):
+        parts = event.text.split(maxsplit=1)
+        if len(parts) > 1:
+            from app.agent.tools import get_nse_stock_price
+            res = await get_nse_stock_price(parts[1])
+            return await event.answer(f"<b>🇰🇪 NSE KENYA MARKET</b>\n\n{res}", reply_markup=kb)
+            
+    text = "<b>🇰🇪 NSE KENYA MARKET</b>\n\nUsage: <code>/nse &lt;ticker&gt;</code>\nExample: <code>/nse SCOM</code>"
+    await smart_edit(event, text, reply_markup=kb)
+
+@router.message(Command("github"))
+@router.callback_query(F.data == "menu:github_quick")
+async def cmd_github(event: Message | CallbackQuery):
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
+    if isinstance(event, Message):
+        parts = event.text.split(maxsplit=1)
+        lang = parts[1] if len(parts) > 1 else "python"
+        from app.agent.tools import fetch_github_trending
+        res = await fetch_github_trending(lang)
+        return await event.answer(f"<b>🐙 GITHUB TRENDING ({lang})</b>\n\n{res}", reply_markup=kb)
+        
+    text = "<b>🐙 GITHUB TRENDING</b>\n\nUsage: <code>/github &lt;language&gt;</code>\nExample: <code>/github python</code>\nExample: <code>/github javascript</code>"
+    await smart_edit(event, text, reply_markup=kb)
+
+@router.message(Command("summarize"))
+async def cmd_summarize(message: Message):
+    parts = message.text.split(maxsplit=1)
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="« Back to Main Menu", callback_data="menu:main")]])
+    if len(parts) > 1:
+        from app.agent.tools import summarize_text
+        status = await message.answer("Summarizing...")
+        res = await summarize_text(parts[1])
+        await status.edit_text(f"<b>📝 TEXT SUMMARY</b>\n\n{res}", reply_markup=kb)
+    else:
+        await message.answer("<b>📝 TEXT SUMMARY</b>\n\nUsage: <code>/summarize &lt;long text&gt;</code>", reply_markup=kb)
